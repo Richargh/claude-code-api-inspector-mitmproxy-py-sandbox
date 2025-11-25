@@ -1,0 +1,61 @@
+= Claude Evaluation with Mitmproxy
+
+This project exposes precisely what Claude Code requests and receives in response from the LLM Web Api.
+Useful if you want to know what the agent is doing and what the context is that leads to it's decisions.
+
+== Prerequisites
+
+=== Python
+
+Make sure an appropriate python version is installed. If you have link:https://github.com/pyenv/pyenv[pyenv] installed, you can call:
+
+* `pyenv local` (will install the version from link:.python-version[].
+
+=== Mitmproxy
+
+This project uses link:https://www.mitmproxy.org/[mitmproxy] as a reverse proxy to capture all the requests and responses that are sent.
+To install it use:
+
+`brew install mitmproxy`
+
+== How to start
+
+=== Setup Virtual Environment
+1. Create a virtual environment by running `python3 -m venv venv` in the project directory.
+2. Activate the virtual environment:
+- On macOS and Linux, run `source venv/bin/activate`.
+- On macOS with fish shell, run `source venv/bin/activate.fish`.
+- On Windows, run `venv\Scripts\activate.bat`.
+
+== Run tests
+
+1. Run tests with `PYTHONPATH=src python -m unittest discover -s test -p "test_*.py"`.
+
+== Usage
+
+First start the proxy and pass the flow-printer-script:
+`mitmdump --mode reverse:https://api.anthropic.com --listen-port 8000 -s src/print_agent_flows.py`
+
+Then start Claude Code and pass the reverse proxy:
+`ANTHROPIC_BASE_URL=http://localhost:8000/ claude`
+
+Look in the CLI to see the requests and responses that Claude Code makes.
+
+== Alternative Usage
+
+You don't have to use the script though.
+If you want to explore the requests/responses on your own the web interface can already help you:
+
+`mitmweb --mode reverse:https://api.anthropic.com --listen-port 8000`
+
+Then start Claude Code and pass the reverse proxy:
+`ANTHROPIC_BASE_URL=http://localhost:8000/ claude`
+
+Now use the web interface to see the requests and responses that Claude Code makes.
+
+== Appendix
+
+=== Pyenv vs Virtual Environment
+
+* `pyenv` manages multiple versions of Python itself.
+* `virtualenv/venv` manages virtual environments for a specific Python version.
