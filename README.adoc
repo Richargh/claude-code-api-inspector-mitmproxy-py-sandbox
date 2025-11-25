@@ -1,7 +1,7 @@
-= Claude Evaluation with Mitmproxy
+= Claude Inspector with Mitmproxy
 
-This project exposes precisely what Claude Code requests and receives in response from the LLM Web Api.
-Useful if you want to know what the agent is doing and what the context is that leads to it's decisions.
+This project inspects precisely what Claude Code requests and receives in response from the LLM Web Api.
+Useful if you want to know what the agent is doing and what the context is that leads to its decisions.
 
 == Prerequisites
 
