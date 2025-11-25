@@ -22,8 +22,6 @@ class FlowRecord:
 def parse_flow(flow) -> FlowRecord:
     """Parse an HTTP flow and return a FlowRecord with extracted data."""
     record = FlowRecord()
-    print(f"\nIs request {flow.request} | Is response {flow.response}")
-
     if flow.request:
         try:
             req = json.loads(flow.request.text)

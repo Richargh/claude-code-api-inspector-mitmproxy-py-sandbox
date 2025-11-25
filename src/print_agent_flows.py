@@ -2,6 +2,7 @@ from hidden.flows import parse_flow
 
 def response(raw_flow) -> None:
     flow = parse_flow(raw_flow)
+    print(f"\nIs request {raw_flow.request is not None} | Is response {raw_flow.response is not None}")
 
     if flow.request_error:
         print(f"\033[91mRequest Error:\033[0m {raw_flow.request.text[:1000]}")
