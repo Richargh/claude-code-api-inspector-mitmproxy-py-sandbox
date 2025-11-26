@@ -150,7 +150,10 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                     text_content = block.text
                 if block.type == 'tool_use':
                     text_content = json.dumps(block.input, indent=2)
-                print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=block.type))
+                header = block.type
+                if block.type == 'tool_use' and hasattr(block, 'name'):
+                    header = f"{block.type} {block.name}"
+                print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
         else:
             print(f"\n{RED}# Strange Response:{RESET}")
             print(f"model:: {flow.model}")
