@@ -1,11 +1,5 @@
+from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
 from hidden.flows import parse_flow
-
-# ANSI color codes
-RED = "\033[91m"
-GREEN = "\033[92m"
-BLUE = "\033[94m"
-GRAY = "\033[90m"
-RESET = "\033[0m"
 
 # Known tools that should be shown in gray
 KNOWN_TOOLS = {
@@ -30,7 +24,7 @@ KNOWN_TOOLS = {
 }
 
 
-def response(raw_flow) -> None:
+def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     flow = parse_flow(raw_flow)
 
     if flow.request_error:

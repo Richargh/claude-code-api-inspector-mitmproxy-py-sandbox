@@ -3,7 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from flows import FlowRecord, parse_flow, parse_sse, parse_sse_response
+from hidden.flows import FlowRecord, parse_flow
+from hidden.flows import _parse_sse as parse_sse, _parse_sse_response as parse_sse_response
 
 
 class TestParseFlow(unittest.TestCase):
@@ -16,21 +17,14 @@ class TestParseFlow(unittest.TestCase):
 
         self.assertEqual(record.model, "claude-haiku-4-5-20250510")
 
-    def test_parse_flow_extracts_last_message_role(self):
-        """Test that last message role is extracted."""
+    def test_parse_flow_extracts_messages(self):
+        """Test that messages are extracted."""
         flow = self._create_mock_flow("1a-pre-request.json")
 
         record = parse_flow(flow)
 
-        self.assertEqual(record.last_message_role, "assistant")
-
-    def test_parse_flow_extracts_last_message_text(self):
-        """Test that last message text is extracted."""
-        flow = self._create_mock_flow("1a-pre-request.json")
-
-        record = parse_flow(flow)
-
-        self.assertEqual(record.last_message_text, "{")
+        self.assertGreater(len(record.messages), 0)
+        self.assertEqual(record.messages[-1].role, "assistant")
 
     def test_parse_flow_returns_flow_record(self):
         """Test that parse_flow returns a FlowRecord instance."""
@@ -73,7 +67,7 @@ class TestParseFlow(unittest.TestCase):
         record = parse_flow(flow)
 
         self.assertEqual(record.model, "test")
-        self.assertIsNone(record.last_message_role)
+        self.assertEqual(len(record.messages), 0)
 
     def test_parse_flow_handles_response_invalid_json(self):
         """Test that invalid response JSON sets response_error."""
