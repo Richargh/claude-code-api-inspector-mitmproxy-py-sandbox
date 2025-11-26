@@ -52,7 +52,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     if flow.pretty_request:
         with open(raw_request_file, "w") as f:
             f.write(flow.pretty_request)
-    else:
+    elif raw_flow.request:
         print("Pretty request is missing")
         with open(raw_response_file, "w") as f:
             f.write(raw_flow.request.text)
@@ -60,7 +60,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     if flow.pretty_response:
         with open(raw_response_file, "w") as f:
             f.write(flow.pretty_response)
-    else:
+    elif raw_flow.response:
         print("Pretty response is missing")
         with open(raw_response_file, "w") as f:
             f.write(raw_flow.response.text)
