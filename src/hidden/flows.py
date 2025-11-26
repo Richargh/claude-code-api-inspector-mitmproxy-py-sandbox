@@ -51,8 +51,8 @@ class ResponseMessage:
 
 @dataclass
 class FlowRecord:
-    raw_request: Optional[str] = None
-    raw_response: Optional[str] = None
+    pretty_request: Optional[str] = None
+    pretty_response: Optional[str] = None
     model: Optional[str] = None
     request_keys: Optional[list[str]] = None
     messages: list[Message] = field(default_factory=list)
@@ -70,7 +70,7 @@ def parse_flow(raw_flow) -> FlowRecord:
     if raw_flow.request:
         try:
             req = json.loads(raw_flow.request.text)
-            record.raw_request = json.dumps(req, indent=2)
+            record.pretty_request = json.dumps(req, indent=2)
             record.request_keys = list(req.keys())
             record.model = req.get('model')
 
@@ -119,7 +119,7 @@ def parse_flow(raw_flow) -> FlowRecord:
         if 'text/event-stream' in content_type:
             try:
                 sse_data = _parse_sse_response(response_text)
-                record.raw_response = json.dumps(asdict(sse_data), indent=2) + "\n" + response_text
+                record.pretty_response = json.dumps(asdict(sse_data), indent=2) + "\n" + response_text
                 record.response_message = sse_data
             except Exception as e:
                 record.response_error = str(e)

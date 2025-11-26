@@ -49,10 +49,21 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     flow = parse_flow(raw_flow)
     raw_request_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-req.json"
     raw_response_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-res.json"
-    with open(raw_request_file, "w") as f:
-        f.write(flow.raw_request)
-    with open(raw_response_file, "w") as f:
-        f.write(flow.raw_response)
+    if flow.pretty_request:
+        with open(raw_request_file, "w") as f:
+            f.write(flow.pretty_request)
+    else:
+        print("Pretty request is missing")
+        with open(raw_response_file, "w") as f:
+            f.write(raw_flow.request.text)
+
+    if flow.pretty_response:
+        with open(raw_response_file, "w") as f:
+            f.write(flow.pretty_response)
+    else:
+        print("Pretty response is missing")
+        with open(raw_response_file, "w") as f:
+            f.write(raw_flow.response.text)
 
     if flow.request_error:
         print(f"{RED}# Request Error:{RESET} {shorten(raw_flow.request.text, width=1000, placeholder='...')}")
@@ -145,5 +156,6 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
             print(f"\n{RED}# Strange Response:{RESET}")
             print(f"model:: {flow.model}")
 
+    print(f"\n# Raw Traces")
     print(f"Written raw request to {raw_request_file}")
     print(f"Written raw response to {raw_response_file}")
