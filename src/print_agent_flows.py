@@ -127,7 +127,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
             print(f"model:: {flow.response_model}")
             print(f"> {flow.response_text[:500]}")
         else:
-            print(f"\n{GREEN}# Strange Response:{RESET}")
+            print(f"\n{RED}# Strange Response:{RESET}")
             print(f"model:: {flow.model}")
 
         print('=' * 60)
