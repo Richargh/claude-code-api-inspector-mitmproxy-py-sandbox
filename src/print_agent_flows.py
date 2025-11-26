@@ -114,11 +114,10 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
             if last_user_prompt_index is None:
                 print("! Original user prompt lost in the ether")
             else:
-                min_message_index = last_user_prompt_index
+                min_message_index = max(last_user_prompt_index - 1, 0)
             messages_to_show = flow.messages[min_message_index:max_message_index]
-            trimmed_message_count = max_message_index - len(messages_to_show)
-            if trimmed_message_count > 0:
-                print(f"...{trimmed_message_count} more message in context, but trimmed for brevity...")
+            if min_message_index > 0:
+                print(f"...{min_message_index} more message in context, but trimmed to focus on current prompt...")
 
             for index, message in enumerate(messages_to_show):
                 actual_index = min_message_index + index
