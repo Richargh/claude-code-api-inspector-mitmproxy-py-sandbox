@@ -145,19 +145,21 @@ class TestParseSSE(unittest.TestCase):
 
         result = parse_sse_response(sse_text)
 
-        self.assertEqual(result['model'], 'claude-haiku-4-5-20250510')
+        self.assertEqual(result.model, 'claude-haiku-4-5-20250510')
 
     def test_parse_sse_response_combines_text_deltas(self):
-        """Test that parse_sse_response combines all text deltas."""
+        """Test that parse_sse_response combines all text deltas into content block."""
         fixture_path = Path(__file__).parent / "1b-pre-response.json"
         with open(fixture_path) as f:
             sse_text = f.read()
 
         result = parse_sse_response(sse_text)
 
-        self.assertIn('isNewTopic', result['text'])
-        self.assertIn('Code', result['text'])
-        self.assertIn('Analysis', result['text'])
+        self.assertEqual(len(result.content), 1)
+        self.assertEqual(result.content[0].type, 'text')
+        self.assertIn('isNewTopic', result.content[0].text)
+        self.assertIn('Code', result.content[0].text)
+        self.assertIn('Analysis', result.content[0].text)
 
     def test_parse_sse_response_extracts_stop_reason(self):
         """Test that parse_sse_response extracts stop_reason."""
@@ -167,18 +169,30 @@ class TestParseSSE(unittest.TestCase):
 
         result = parse_sse_response(sse_text)
 
-        self.assertEqual(result['stop_reason'], 'end_turn')
+        self.assertEqual(result.stop_reason, 'end_turn')
 
     def test_parse_sse_response_extracts_token_usage(self):
-        """Test that parse_sse_response extracts token counts."""
+        """Test that parse_sse_response extracts token counts in usage dataclass."""
         fixture_path = Path(__file__).parent / "1b-pre-response.json"
         with open(fixture_path) as f:
             sse_text = f.read()
 
         result = parse_sse_response(sse_text)
 
-        self.assertEqual(result['input_tokens'], 120)
-        self.assertEqual(result['output_tokens'], 30)
+        self.assertEqual(result.usage.input_tokens, 120)
+        self.assertEqual(result.usage.output_tokens, 30)
+
+    def test_parse_sse_response_extracts_message_id(self):
+        """Test that parse_sse_response extracts message id."""
+        fixture_path = Path(__file__).parent / "1b-pre-response.json"
+        with open(fixture_path) as f:
+            sse_text = f.read()
+
+        result = parse_sse_response(sse_text)
+
+        self.assertEqual(result.id, 'msg_1234')
+        self.assertEqual(result.role, 'assistant')
+        self.assertEqual(result.type, 'message')
 
 
 class TestParseFlowWithSSE(unittest.TestCase):
@@ -189,11 +203,14 @@ class TestParseFlowWithSSE(unittest.TestCase):
 
         record = parse_flow(flow)
 
-        self.assertEqual(record.response_model, 'claude-haiku-4-5-20250510')
-        self.assertIn('isNewTopic', record.response_text)
-        self.assertEqual(record.response_stop_reason, 'end_turn')
-        self.assertEqual(record.input_tokens, 120)
-        self.assertEqual(record.output_tokens, 30)
+        self.assertIsNotNone(record.response_message)
+        self.assertEqual(record.response_message.model, 'claude-haiku-4-5-20250510')
+        self.assertEqual(record.response_message.id, 'msg_1234')
+        self.assertEqual(len(record.response_message.content), 1)
+        self.assertIn('isNewTopic', record.response_message.content[0].text)
+        self.assertEqual(record.response_message.stop_reason, 'end_turn')
+        self.assertEqual(record.response_message.usage.input_tokens, 120)
+        self.assertEqual(record.response_message.usage.output_tokens, 30)
 
     def test_parse_flow_sse_no_error(self):
         """Test that SSE response doesn't set response_error."""

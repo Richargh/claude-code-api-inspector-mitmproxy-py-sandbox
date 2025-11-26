@@ -1,6 +1,6 @@
 import json
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass, field, asdict
+from typing import Optional, Union
 
 
 @dataclass
@@ -19,6 +19,37 @@ class SystemPrompt:
     text: str
 
 @dataclass
+class Usage:
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    cache_creation_input_tokens: Optional[int] = None
+    cache_read_input_tokens: Optional[int] = None
+
+@dataclass
+class TextBlock:
+    type: str = 'text'
+    text: str = ''
+
+@dataclass
+class ToolUseBlock:
+    type: str = 'tool_use'
+    id: Optional[str] = None
+    tool_name: Optional[str] = None
+    input: Optional[dict] = None
+
+@dataclass
+class ResponseMessage:
+    id: Optional[str] = None
+    type: str = 'message'
+    role: str = 'assistant'
+    model: Optional[str] = None
+    content: list[Union[TextBlock, ToolUseBlock]] = field(default_factory=list)
+    stop_reason: Optional[str] = None
+    stop_sequence: Optional[str] = None
+    usage: Optional[Usage] = None
+    context_management: Optional[dict] = None
+
+@dataclass
 class FlowRecord:
     raw_request: Optional[str] = None
     raw_response: Optional[str] = None
@@ -29,12 +60,8 @@ class FlowRecord:
     tools: list[str] = field(default_factory=list)
     request_error: Optional[str] = None
     response_error: Optional[str] = None
-    # Response fields from SSE
-    response_text: Optional[str] = None
-    response_model: Optional[str] = None
-    response_stop_reason: Optional[str] = None
-    input_tokens: Optional[int] = None
-    output_tokens: Optional[int] = None
+    # Full response message from SSE
+    response_message: Optional[ResponseMessage] = None
 
 
 def parse_flow(raw_flow) -> FlowRecord:
@@ -92,12 +119,8 @@ def parse_flow(raw_flow) -> FlowRecord:
         if 'text/event-stream' in content_type:
             try:
                 sse_data = _parse_sse_response(response_text)
-                record.raw_response = json.dumps(sse_data, indent=2) + "\n" + response_text
-                record.response_model = sse_data['model']
-                record.response_text = sse_data['text']
-                record.response_stop_reason = sse_data['stop_reason']
-                record.input_tokens = sse_data['input_tokens']
-                record.output_tokens = sse_data['output_tokens']
+                record.raw_response = json.dumps(asdict(sse_data), indent=2) + "\n" + response_text
+                record.response_message = sse_data
             except Exception as e:
                 record.response_error = str(e)
         else:
@@ -109,17 +132,13 @@ def parse_flow(raw_flow) -> FlowRecord:
     return record
 
 
-def _parse_sse_response(text: str) -> dict:
-    """Parse SSE response and extract combined content and metadata."""
+def _parse_sse_response(text: str) -> ResponseMessage:
+    """Parse SSE response and reconstruct full message with all content blocks."""
     events = _parse_sse(text)
 
-    result = {
-        'model': None,
-        'text': '',
-        'stop_reason': None,
-        'input_tokens': None,
-        'output_tokens': None,
-    }
+    result = ResponseMessage()
+    usage_data = {}
+    content_blocks = {}  # Track blocks by index
 
     for event in events:
         data = event.get('data', {})
@@ -130,22 +149,63 @@ def _parse_sse_response(text: str) -> dict:
 
         if event_type == 'message_start':
             message = data.get('message', {})
-            result['model'] = message.get('model')
-            usage = message.get('usage', {})
-            result['input_tokens'] = usage.get('input_tokens')
-            result['output_tokens'] = usage.get('output_tokens')
+            result.id = message.get('id')
+            result.model = message.get('model')
+            result.role = message.get('role', 'assistant')
+            usage_data = message.get('usage', {})
+
+        elif event_type == 'content_block_start':
+            index = data.get('index')
+            block = data.get('content_block', {})
+            block_type = block.get('type')
+            content_blocks[index] = {
+                'type': block_type,
+                'text': '' if block_type == 'text' else None,
+                'id': block.get('id'),
+                'name': block.get('name'),
+                'input': '' if block_type == 'tool_use' else None,
+            }
 
         elif event_type == 'content_block_delta':
+            index = data.get('index')
             delta = data.get('delta', {})
-            if delta.get('type') == 'text_delta':
-                result['text'] += delta.get('text', '')
+            if index in content_blocks:
+                if delta.get('type') == 'text_delta':
+                    content_blocks[index]['text'] += delta.get('text', '')
+                elif delta.get('type') == 'input_json_delta':
+                    content_blocks[index]['input'] += delta.get('partial_json', '')
 
         elif event_type == 'message_delta':
             delta = data.get('delta', {})
-            result['stop_reason'] = delta.get('stop_reason')
-            usage = data.get('usage', {})
-            if usage.get('output_tokens'):
-                result['output_tokens'] = usage.get('output_tokens')
+            result.stop_reason = delta.get('stop_reason')
+            result.stop_sequence = delta.get('stop_sequence')
+            usage_data.update(data.get('usage', {}))
+            if 'context_management' in data:
+                result.context_management = data['context_management']
+
+    # Create Usage dataclass
+    result.usage = Usage(
+        input_tokens=usage_data.get('input_tokens'),
+        output_tokens=usage_data.get('output_tokens'),
+        cache_creation_input_tokens=usage_data.get('cache_creation_input_tokens'),
+        cache_read_input_tokens=usage_data.get('cache_read_input_tokens'),
+    )
+
+    # Finalize content blocks
+    for index in sorted(content_blocks.keys()):
+        block = content_blocks[index]
+        if block['type'] == 'text':
+            result.content.append(TextBlock(text=block['text']))
+        elif block['type'] == 'tool_use':
+            try:
+                input_data = json.loads(block['input']) if block['input'] else {}
+            except json.JSONDecodeError:
+                input_data = block['input']
+            result.content.append(ToolUseBlock(
+                id=block['id'],
+                tool_name=block['name'],
+                input=input_data,
+            ))
 
     return result
 

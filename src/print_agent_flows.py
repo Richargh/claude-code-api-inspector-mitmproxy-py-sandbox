@@ -1,3 +1,5 @@
+import json
+from textwrap import shorten
 from pathlib import Path
 from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
 from hidden.flows import parse_flow
@@ -127,11 +129,18 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     if raw_flow.response:
         if flow.response_error:
             print(f"{RED}# Response Error:{RESET} {raw_flow.response.text[:1000]}")
-        elif flow.response_text is not None:
+        elif flow.response_message is not None:
             # SSE response
             print(f"\n{GREEN}# Response{RESET}")
-            print(f"model:: {flow.response_model}")
-            print(box_wrap(flow.response_text[:500]))
+            print(f"model:: {flow.response_message.model}")
+            # Extract text from content blocks
+            for block in flow.response_message.content:
+                text_content = ''
+                if block.type == 'text':
+                    text_content = block.text
+                if block.type == 'tool_use':
+                    text_content = json.dumps(block.input, indent=2)
+                print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=block.type))
         else:
             print(f"\n{RED}# Strange Response:{RESET}")
             print(f"model:: {flow.model}")
