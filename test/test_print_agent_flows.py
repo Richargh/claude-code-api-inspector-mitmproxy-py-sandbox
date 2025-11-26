@@ -38,8 +38,8 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
-        self.assertIn("[tool_use: Read]", output)
-        self.assertIn("[tool_use: Edit]", output)
+        self.assertIn("tool_use Read", output)
+        self.assertIn("tool_use Edit", output)
 
     def test_response_extracts_tool_result(self):
         """Test that tool_result content is displayed."""
@@ -49,7 +49,7 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
-        self.assertIn("[tool_result:", output)
+        self.assertIn("tool_result", output)
 
     def test_response_extracts_system_prompts(self):
         """Test that system prompts are extracted."""

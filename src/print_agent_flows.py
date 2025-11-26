@@ -3,6 +3,7 @@ from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
 from hidden.flows import parse_flow
 from hidden.diff import diff_system_prompts
 from hidden.box import box_wrap
+from hidden.border_line import border_line, border_line_tool_use, border_line_tool_result
 
 # Known tools that should be shown in gray
 KNOWN_TOOLS = {
@@ -64,13 +65,13 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                 print(f"@{msg.role}:")
                 for content in msg.content:
                     if content.type == 'text':
-                        text_preview = (content.text or '')[:100]
-                        print(f"  > {text_preview}")
+                        text_preview = (content.text or '')[:200]
+                        print(border_line(text_preview))
                     elif content.type == 'tool_use':
-                        print(f"  > [tool_use: {content.tool_name}]")
+                        print(border_line_tool_use(content.tool_name, ""))
                     elif content.type == 'tool_result':
-                        text_preview = (content.text or '')[:100]
-                        print(f"  > [tool_result: {text_preview}]")
+                        text_preview = (content.text or '')[:200]
+                        print(border_line_tool_result(text_preview))
         print("---")
 
         # System prompts
