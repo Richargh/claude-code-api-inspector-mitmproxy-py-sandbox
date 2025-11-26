@@ -4,11 +4,27 @@ from typing import Optional
 
 
 @dataclass
+class MessageContent:
+    type: str
+    text: Optional[str] = None
+    tool_name: Optional[str] = None
+
+@dataclass
+class Message:
+    role: str
+    content: list[MessageContent] = field(default_factory=list)
+
+@dataclass
+class SystemPrompt:
+    text: str
+
+@dataclass
 class FlowRecord:
     model: Optional[str] = None
     request_keys: Optional[list[str]] = None
-    last_message_role: Optional[str] = None
-    last_message_text: Optional[str] = None
+    messages: list[Message] = field(default_factory=list)
+    system_prompts: list[SystemPrompt] = field(default_factory=list)
+    tools: list[str] = field(default_factory=list)
     request_error: Optional[str] = None
     response_error: Optional[str] = None
     # Response fields from SSE
@@ -27,13 +43,41 @@ def parse_flow(flow) -> FlowRecord:
             req = json.loads(flow.request.text)
             record.request_keys = list(req.keys())
             record.model = req.get('model')
-            messages = req.get('messages')
-            if messages:
-                last_message = messages[-1]
-                record.last_message_role = last_message.get('role')
-                content = last_message.get('content')
-                if content and len(content) > 0:
-                    record.last_message_text = content[-1].get('text')
+
+            # Parse messages
+            messages = req.get('messages', [])
+            for msg in messages:
+                role = msg.get('role', '')
+                content_list = msg.get('content', [])
+                parsed_content = []
+                if isinstance(content_list, str):
+                    # Handle simple string content format
+                    parsed_content.append(MessageContent(type='text', text=content_list))
+                else:
+                    # Handle list of content blocks
+                    for item in content_list:
+                        item_type = item.get('type', '')
+                        if item_type == 'text':
+                            parsed_content.append(MessageContent(type='text', text=item.get('text', '')))
+                        elif item_type == 'tool_use':
+                            parsed_content.append(MessageContent(type='tool_use', tool_name=item.get('name', '')))
+                        elif item_type == 'tool_result':
+                            parsed_content.append(MessageContent(type='tool_result', text=item.get('content', '')))
+                record.messages.append(Message(role=role, content=parsed_content))
+
+            # Parse system prompts
+            system = req.get('system', [])
+            for sys_item in system:
+                text = sys_item.get('text', '')
+                record.system_prompts.append(SystemPrompt(text=text))
+
+            # Parse tools
+            tools = req.get('tools', [])
+            for tool in tools:
+                name = tool.get('name', '')
+                if name:
+                    record.tools.append(name)
+
         except json.JSONDecodeError as e:
             record.request_error = str(e)
         except (KeyError, IndexError, TypeError) as e:

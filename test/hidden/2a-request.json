@@ -1,19 +1,117 @@
 {
-  "model": "claude-opus-4-5-20251101",
+  "model": "claude-opus-4-5-20230415",
   "messages": [
     {
       "role": "user",
       "content": [
         {
           "type": "text",
-          "text": "<system-reminder>\nAs you answer the user's questions, you can use the following context:\n# claudeMd\nCodebase and user instructions are shown below. Be sure to adhere to these instructions. IMPORTANT: These instructions OVERRIDE any default behavior and you MUST follow them exactly as written.\n\nContents of phoenix/CLAUDE.md (project instructions, checked into the codebase):\n\n# CLAUDE.md\n\nThis file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.\n\n## Repository Overview\n\nThis is the Phoenix monorepo containing the server (Go), web application (React/TypeScript), API specifications, and E2E tests. Phoenix is an open-source platform.\n\n## Common Commands\n\n### Server (in `server/` directory)\n\n```bash\n# Run the full stack (server + client)\nmake run\n\n# Run only the server\nmake run-server\n\n# Start docker dependencies (postgres, minio, etc.)\nmake start-docker\n\n# Stop docker dependencies\nmake stop-docker\n\n# Run server tests\nmake test-server\n\n# Run quick tests (no docker)\nmake test-server-quick\n\n# Run tests with race detection\nmake test-server-race\n\n# Lint Go code\nmake golangci-lint\n\n# Generate mocks\nmake mocks\n\n# Create a new database migration\nmake new-migration name=<migration_name>\n```\n\n### Web App (in `webapp/` directory)\n\n```bash\n# Install dependencies\nnpm install\n\n# Run development server\nmake run          # or: npm run run\nmake dev          # with webpack-dev-server\n\n# Build for production\nnpm run build\n\n# Run tests\nnpm run test\n\n# Run specific test file\nnpm run test -- path/to/file.test.tsx\n\n# Lint and type check\nnpm run check         # eslint + stylelint\nnpm run check-types   # TypeScript\n\n# Auto-fix lint issues\nnpm run fix\n```\n\n### Single Workspace Testing (webapp)\n\n```bash\n# Run tests for specific workspace\nnpm run test --workspace=channels\nnpm run test --workspace=platform/client\n\n# Type check specific workspace\nnpm run check-types --workspace=channels\n```\n\n## Architecture\n\n### Server (`server/`)\n- **Go-based** backend with modular architecture\n- `channels/app/` - Core business logic and application layer\n- `channels/api4/` - REST API v4 handlers\n- `channels/store/` - Database layer with PostgreSQL support\n- `channels/jobs/` - Background job processing\n- `public/` - Public API and plugin interfaces\n- `cmd/phoenix/` - Main server entry point\n- `cmd/mmctl/` - CLI tool for server administration\n\n### Web App (`webapp/`)\n- **React/TypeScript** single-page application using npm workspaces\n- `channels/` - Main web application\n    - `channels/src/components/` - React components\n    - `channels/src/actions/` - Redux actions\n    - `channels/src/selectors/` - Redux selectors\n    - `channels/src/reducers/` - Redux reducers\n- `platform/` - Shared packages:\n    - `platform/types/` - TypeScript type definitions (`@pheonix/types`)\n    - `platform/client/` - API client library (`@pheonix/client`)\n    - `platform/components/` - Shared React components\n    - `platform/pheonix-redux/` - Redux state management (legacy)\n\n### API Specifications (`api/`)\n- OpenAPI/Swagger specifications for REST API\n\n### E2E Tests (`e2e-tests/`)\n- `playwright/` - Playwright-based E2E tests (see `e2e-tests/playwright/CLAUDE.md`)\n- `cypress/` - Cypress-based E2E tests (legacy)\n\n## Key Configuration\n\n### Server\n- Config file: `server/config/config.json`\n- Docker services: `server/docker-compose.yaml`\n- Go version: See `server/.go-version`\n\n### Web App\n- Node version: See `.nvmrc`\n- Main config: `webapp/package.json`\n- Workspaces defined in `webapp/package.json`\n\n## Package Imports\n\nAlways import platform packages using their full names:\n```typescript\n// Correct\nimport {Client4} from '@pheonix/client';\nimport {UserProfile} from '@pheonix/types/users';\n\n// Incorrect - don't use relative paths\nimport Client4 from '../../platform/client/src/client4';\n```\n\n## Test Accounts\n\nWhen running with test data (`make test-data` in server/):\n- Admin: `sysadmin` / `Sys@dmin-sample1`\n- User: `user-1` / `SampleUs@r-1`\n\n      IMPORTANT: this context may or may not be relevant to your tasks. You should not respond to this context unless it is highly relevant to your task.\n</system-reminder>\n"
+          "text": "Where is x?"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "I'll search for documentation or specifications."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_123",
+          "name": "Read",
+          "input": {
+            "file_path": "foo/bar/blubb.json"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_123",
+          "type": "tool_result",
+          "content": "Haiku Haiku Haiku"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "This file shows a request to the nothing..."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "<system-reminder>\nThe user selected the lines -5 to -10 from foo/bar/blubb.json:\n   \n\nThis may or may not be related to the current task.\n</system-reminder>"
         },
         {
           "type": "text",
-          "text": "What is this code base about?",
-          "cache_control": {
-            "type": "ephemeral"
+          "text": "This line should also extract what top-level blocks are in the json."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Let me read the bla.py file to understand the context and see what that line currently does."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_343243",
+          "name": "Read",
+          "input": {
+            "file_path": "unicorn/is/best/bla.py"
           }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_343243",
+          "type": "tool_result",
+          "content": "     1→import json\n     2→# nothing more<system-reminder>\nWhenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.\n</system-reminder>\n"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Now I understand. Line -100 does nothing."
+        },
+        {
+          "type": "tool_use",
+          "id": "toolu_asdasd",
+          "name": "Edit",
+          "input": {
+            "file_path": "unicorn/is/best/bla.py",
+            "old_string": "import json\n# nothing more",
+            "new_string": "import json\n# even less more"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "tool_use_id": "toolu_asdasd",
+          "type": "tool_result",
+          "content": "The file /unicorn/is/best/bla.py has been updated."
         }
       ]
     }
