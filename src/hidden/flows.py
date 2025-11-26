@@ -38,12 +38,25 @@ class ToolUseBlock:
     input: Optional[dict] = None
 
 @dataclass
+class ServerToolUseBlock:
+    type: str = 'server_tool_use'
+    id: Optional[str] = None
+    tool_name: Optional[str] = None
+    input: Optional[dict] = None
+
+@dataclass
+class ServerToolResultBlock:
+    type: str = 'server_tool_result'
+    tool_use_id: Optional[str] = None
+    content: Optional[list] = None
+
+@dataclass
 class ResponseMessage:
     id: Optional[str] = None
     type: str = 'message'
     role: str = 'assistant'
     model: Optional[str] = None
-    content: list[Union[TextBlock, ToolUseBlock]] = field(default_factory=list)
+    content: list[Union[TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock]] = field(default_factory=list)
     stop_reason: Optional[str] = None
     stop_sequence: Optional[str] = None
     usage: Optional[Usage] = None
@@ -163,7 +176,9 @@ def _parse_sse_response(text: str) -> ResponseMessage:
                 'text': '' if block_type == 'text' else None,
                 'id': block.get('id'),
                 'name': block.get('name'),
-                'input': '' if block_type == 'tool_use' else None,
+                'input': '' if block_type in ('tool_use', 'server_tool_use') else None,
+                'tool_use_id': block.get('tool_use_id'),
+                'content': block.get('content'),
             }
 
         elif event_type == 'content_block_delta':
@@ -205,6 +220,22 @@ def _parse_sse_response(text: str) -> ResponseMessage:
                 id=block['id'],
                 tool_name=block['name'],
                 input=input_data,
+            ))
+        elif block['type'] == 'server_tool_use':
+            try:
+                input_data = json.loads(block['input']) if block['input'] else {}
+            except json.JSONDecodeError:
+                input_data = block['input']
+            result.content.append(ServerToolUseBlock(
+                id=block['id'],
+                tool_name=block['name'],
+                input=input_data,
+            ))
+        elif block['type'] == 'web_search_tool_result':
+            result.content.append(ServerToolResultBlock(
+                type='web_search_tool_result',
+                tool_use_id=block['tool_use_id'],
+                content=block['content'],
             ))
 
     return result
