@@ -55,7 +55,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
         f.write(flow.raw_response)
 
     if flow.request_error:
-        print(f"{RED}# Request Error:{RESET} {raw_flow.request.text[:1000]}")
+        print(f"{RED}# Request Error:{RESET} {shorten(raw_flow.request.text, width=1000, placeholder='...')}")
         return
 
     if flow.model:
@@ -74,7 +74,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                     else:
                         print(box_wrap(f"{text_start}[...]\n\n{diff}", header="Changed System Prompt"))
                 else:
-                    print(box_wrap(f"{sys_prompt.text[:100]}[...]", header="Unknown System Prompt"))
+                    print(box_wrap(f"{shorten(sys_prompt.text, width=100, placeholder='...')}[...]", header="Unknown System Prompt"))
 
         # Tools (unknown first in green, known in gray)
         if flow.tools:
@@ -120,15 +120,15 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                     if content.type == 'tool_use':
                         print(f"{color_start}{box_wrap('', header = f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
                     elif content.type == 'tool_result':
-                        text_preview = (content.text or '')[:200]
+                        text_preview = shorten(content.text or '', width=200, placeholder='...')
                         print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
                     else:
-                        text_preview = (content.text or '')[:200]
+                        text_preview = shorten(content.text or '', width=200, placeholder='...')
                         print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
 
     if raw_flow.response:
         if flow.response_error:
-            print(f"{RED}# Response Error:{RESET} {raw_flow.response.text[:1000]}")
+            print(f"{RED}# Response Error:{RESET} {shorten(raw_flow.response.text, width=1000, placeholder='...')}")
         elif flow.response_message is not None:
             # SSE response
             print(f"\n{GREEN}# Response{RESET}")
