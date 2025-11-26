@@ -1,0 +1,1 @@
+Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title

@@ -1,5 +1,7 @@
+from pathlib import Path
 from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
 from hidden.flows import parse_flow
+from hidden.diff import diff_system_prompts
 
 # Known tools that should be shown in gray
 KNOWN_TOOLS = {
@@ -23,6 +25,21 @@ KNOWN_TOOLS = {
     "SlashCommand"
 }
 
+module_dir = Path(__file__).parent
+identity_prompt_path = module_dir / 'hidden' / 'system-prompt-identity.md'
+identity_prompt = identity_prompt_path.read_text()
+identity_prompt_start = identity_prompt.split('.')[0]
+pre_prompt_path = module_dir / 'hidden' / 'system-prompt-pre.md'
+pre_prompt = pre_prompt_path.read_text()
+pre_prompt_start = pre_prompt.split('.')[0]
+standard_prompt_path = module_dir / 'hidden' / 'system-prompt-standard.md'
+standard_prompt = standard_prompt_path.read_text()
+standard_prompt_start = standard_prompt.split('.')[0]
+known_system_prompts = {
+    identity_prompt_start: identity_prompt,
+    pre_prompt_start: pre_prompt,
+    standard_prompt_start: standard_prompt
+}
 
 def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     flow = parse_flow(raw_flow)
@@ -56,8 +73,15 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
         if flow.system_prompts:
             print("## System")
             for sys_prompt in flow.system_prompts:
-                text_preview = sys_prompt.text[:100]
-                print(f"> {text_preview}")
+                text_start = sys_prompt.text.split('.')[0]
+                if text_start in known_system_prompts:
+                    known_system_prompt = known_system_prompts[text_start]
+                    diff = diff_system_prompts(known_system_prompt, sys_prompt.text, colorize)
+                    text_preview = f"> Known System Prompt: {text_start}..." if diff is '' else diff
+                    print(f"> Changed System Prompt: {text_start}... Diff:\n{text_preview}")
+                else:
+                    text_preview = sys_prompt.text[:100]
+                    print(f"> {text_preview}")
 
         # Tools (unknown first in green, known in gray)
         if flow.tools:
