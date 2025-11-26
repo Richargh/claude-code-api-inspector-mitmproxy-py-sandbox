@@ -27,8 +27,8 @@ class TableFlowsTest(unittest.TestCase):
             output = mock_stdout.getvalue()
 
         self.assertIn("## Messages", output)
-        self.assertIn("@user:", output)
-        self.assertIn("@assistant:", output)
+        self.assertIn("by user:", output)
+        self.assertIn("by assistant:", output)
 
     def test_response_extracts_tool_use(self):
         """Test that tool_use content is displayed."""
@@ -93,9 +93,29 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
-        # Count occurrences of "@" which indicates message roles
-        role_count = output.count("@user:") + output.count("@assistant:")
+        # Count occurrences of "by user:" and "by assistant:" which indicate message roles
+        role_count = output.count("by user:") + output.count("by assistant:")
         self.assertLessEqual(role_count, 10)
+
+    def test_highlights_only_last_user_text_not_system(self):
+        """Test that only the last user text (not starting with <system) is highlighted."""
+        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow)
+            output = mock_stdout.getvalue()
+
+        GRAY = "\033[90m"
+        RESET = "\033[0m"
+
+        # The last non-system user text is "This line should also extract..."
+        # It should NOT be preceded by GRAY
+        last_user_text = "This line should also extract"
+        self.assertIn(last_user_text, output)
+        self.assertNotIn(f"{GRAY}┌─text", output.split(last_user_text)[0].split('\n')[-2])
+
+        # Other user texts like "Where is x?" should be in GRAY
+        self.assertIn(f"{GRAY}┌─text", output)
 
 
     def _create_mock_flow(self, request_file, response_data=None):

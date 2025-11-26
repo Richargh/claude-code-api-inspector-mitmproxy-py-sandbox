@@ -82,21 +82,41 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
 
         if flow.messages:
             print("## Messages")
-            messages_to_show = flow.messages[-10:]
-            trimmed_message_count = len(flow.messages) - 10
+            # Find the last user text content that isn't a system-reminder
+            last_user_prompt_index = None
+            for index, message in enumerate(flow.messages):
+                if message.role == 'user':
+                    for content in message.content:
+                        if content.type == 'text' and not content.text.startswith("<system"):
+                            last_user_prompt_index = index
+
+            max_message_index = len(flow.messages)
+            min_message_index = max(max_message_index - 10, 0)
+            if last_user_prompt_index is None:
+                print("! Original user prompt lost in the ether")
+            else:
+                min_message_index = last_user_prompt_index
+            messages_to_show = flow.messages[min_message_index:max_message_index]
+            trimmed_message_count = len(messages_to_show)
             if trimmed_message_count > 0:
                 print(f"...{trimmed_message_count} more message in context, but trimmed for brevity...")
-            for msg in messages_to_show:
-                print(f"@{msg.role}:")
-                for content in msg.content:
+
+            for index, message in enumerate(messages_to_show):
+                actual_index = min_message_index + index
+                is_highlight = last_user_prompt_index == actual_index
+                color_start = "" if is_highlight else GRAY
+                color_end = "" if is_highlight else RESET
+                print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
+                for content_idx, content in enumerate(message.content):
+
                     if content.type == 'tool_use':
-                        print(box_wrap("", header = f"{content.type} {content.tool_name} ", bottom=False))
+                        print(f"{color_start}{box_wrap('', header = f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
                     elif content.type == 'tool_result':
                         text_preview = (content.text or '')[:200]
-                        print(box_wrap(text_preview, footer=content.type, top=False))
+                        print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
                     else:
                         text_preview = (content.text or '')[:200]
-                        print(box_wrap(text_preview, header=content.type))
+                        print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
 
     if raw_flow.response:
         if flow.response_error:
