@@ -12,6 +12,7 @@ KNOWN_TOOLS = {
     "Bash",
     "BashOutput",
     "Glob",
+    "Grep",
     "Read",
     "Edit",
     "Write",
@@ -21,11 +22,11 @@ KNOWN_TOOLS = {
     "WebSearch",
     "NotebookEdit",
     "EnterPlanMode",
-    "ExitPlanMode"
+    "ExitPlanMode",
     "KillShell",
     "AskUserQuestion",
     "Skill",
-    "SlashCommand",
+    "SlashCommand"
 }
 
 
