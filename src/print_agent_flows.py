@@ -3,7 +3,7 @@ from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
 from hidden.flows import parse_flow
 from hidden.diff import diff_system_prompts
 from hidden.box import box_wrap
-from hidden.border_line import border_line, border_line_tool_use, border_line_tool_result
+from datetime import datetime
 
 # Known tools that should be shown in gray
 KNOWN_TOOLS = {
@@ -45,6 +45,12 @@ known_system_prompts = {
 
 def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     flow = parse_flow(raw_flow)
+    raw_request_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-req.json"
+    raw_response_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-res.json"
+    with open(raw_request_file, "w") as f:
+        f.write(flow.raw_request)
+    with open(raw_response_file, "w") as f:
+        f.write(flow.raw_response)
 
     if flow.request_error:
         print(f"{RED}# Request Error:{RESET} {raw_flow.request.text[:1000]}")
@@ -130,4 +136,5 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
             print(f"\n{RED}# Strange Response:{RESET}")
             print(f"model:: {flow.model}")
 
-        print('=' * 60)
+    print(f"Written raw request to {raw_request_file}")
+    print(f"Written raw response to {raw_response_file}")

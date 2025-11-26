@@ -20,6 +20,8 @@ class SystemPrompt:
 
 @dataclass
 class FlowRecord:
+    raw_request: Optional[str] = None
+    raw_response: Optional[str] = None
     model: Optional[str] = None
     request_keys: Optional[list[str]] = None
     messages: list[Message] = field(default_factory=list)
@@ -35,12 +37,13 @@ class FlowRecord:
     output_tokens: Optional[int] = None
 
 
-def parse_flow(flow) -> FlowRecord:
+def parse_flow(raw_flow) -> FlowRecord:
     """Parse an HTTP flow and return a FlowRecord with extracted data."""
     record = FlowRecord()
-    if flow.request:
+    if raw_flow.request:
         try:
-            req = json.loads(flow.request.text)
+            req = json.loads(raw_flow.request.text)
+            record.raw_request = json.dumps(req, indent=2)
             record.request_keys = list(req.keys())
             record.model = req.get('model')
 
@@ -83,12 +86,13 @@ def parse_flow(flow) -> FlowRecord:
         except (KeyError, IndexError, TypeError) as e:
             record.request_error = str(e)
 
-    if flow.response:
-        response_text = flow.response.text
-        content_type = flow.response.headers.get('content-type', '')
+    if raw_flow.response:
+        response_text = raw_flow.response.text
+        content_type = raw_flow.response.headers.get('content-type', '')
         if 'text/event-stream' in content_type:
             try:
                 sse_data = _parse_sse_response(response_text)
+                record.raw_response = json.dumps(sse_data, indent=2) + "\n" + response_text
                 record.response_model = sse_data['model']
                 record.response_text = sse_data['text']
                 record.response_stop_reason = sse_data['stop_reason']
