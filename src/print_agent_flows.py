@@ -49,12 +49,12 @@ def response(raw_flow) -> None:
                 for content in msg.content:
                     if content.type == 'text':
                         text_preview = (content.text or '')[:100]
-                        print(f"> {text_preview}")
+                        print(f"  > {text_preview}")
                     elif content.type == 'tool_use':
-                        print(f"[tool_use: {content.tool_name}]")
+                        print(f"  > [tool_use: {content.tool_name}]")
                     elif content.type == 'tool_result':
                         text_preview = (content.text or '')[:100]
-                        print(f"[tool_result: {text_preview}]")
+                        print(f"  > [tool_result: {text_preview}]")
         print("---")
 
         # System prompts
