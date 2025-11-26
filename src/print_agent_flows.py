@@ -54,27 +54,6 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
         print(f"\n{BLUE}# Request:{RESET}")
         print(f"model:: {flow.model}")
 
-        # Messages (last 10)
-        if flow.messages:
-            print("## Messages")
-            messages_to_show = flow.messages[-10:]
-            trimmed_message_count = len(flow.messages) - 10
-            if trimmed_message_count > 0:
-                print(f"...{trimmed_message_count} more message in context, but trimmed for brevity...")
-            for msg in messages_to_show:
-                print(f"@{msg.role}:")
-                for content in msg.content:
-                    if content.type == 'text':
-                        text_preview = (content.text or '')[:200]
-                        print(border_line(text_preview))
-                    elif content.type == 'tool_use':
-                        print(border_line_tool_use(content.tool_name, ""))
-                    elif content.type == 'tool_result':
-                        text_preview = (content.text or '')[:200]
-                        print(border_line_tool_result(text_preview))
-        print("---")
-
-        # System prompts
         if flow.system_prompts:
             print("## System")
             for sys_prompt in flow.system_prompts:
@@ -100,6 +79,24 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                 tools_display.append(f"{GRAY}{t}{RESET}")
             print(f"## Tools")
             print(f"{', '.join(tools_display)}")
+
+        if flow.messages:
+            print("## Messages")
+            messages_to_show = flow.messages[-10:]
+            trimmed_message_count = len(flow.messages) - 10
+            if trimmed_message_count > 0:
+                print(f"...{trimmed_message_count} more message in context, but trimmed for brevity...")
+            for msg in messages_to_show:
+                print(f"@{msg.role}:")
+                for content in msg.content:
+                    if content.type == 'text':
+                        text_preview = (content.text or '')[:200]
+                        print(border_line(text_preview))
+                    elif content.type == 'tool_use':
+                        print(border_line_tool_use(content.tool_name, ""))
+                    elif content.type == 'tool_result':
+                        text_preview = (content.text or '')[:200]
+                        print(border_line_tool_result(text_preview))
 
     if raw_flow.response:
         if flow.response_error:
