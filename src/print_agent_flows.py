@@ -46,36 +46,36 @@ known_system_prompts = {
 }
 
 def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
-    flow = parse_flow(raw_flow)
+    req_flow, res_flow = parse_flow(raw_flow)
     raw_request_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-req.json"
     raw_response_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-res.json"
-    if flow.pretty_request:
+    if req_flow.pretty:
         with open(raw_request_file, "w") as f:
-            f.write(flow.pretty_request)
+            f.write(req_flow.pretty)
     elif raw_flow.request:
         print("Pretty request is missing")
         with open(raw_response_file, "w") as f:
             f.write(raw_flow.request.text)
 
-    if flow.pretty_response:
+    if res_flow.pretty:
         with open(raw_response_file, "w") as f:
-            f.write(flow.pretty_response)
+            f.write(res_flow.pretty)
     elif raw_flow.response:
         print("Pretty response is missing")
         with open(raw_response_file, "w") as f:
             f.write(raw_flow.response.text)
 
-    if flow.request_error:
+    if req_flow.error:
         print(f"{RED}# Request Error:{RESET} {shorten(raw_flow.request.text, width=1000, placeholder='...')}")
         return
 
-    if flow.model:
+    if req_flow.model:
         print(f"\n{BLUE}# Request:{RESET}")
-        print(f"model:: {flow.model}")
+        print(f"model:: {req_flow.model}")
 
-        if flow.system_prompts:
+        if req_flow.system_prompts:
             print("## System")
-            for sys_prompt in flow.system_prompts:
+            for sys_prompt in req_flow.system_prompts:
                 text_start = sys_prompt.text.split('.')[0]
                 if text_start in known_system_prompts:
                     known_system_prompt = known_system_prompts[text_start]
@@ -88,9 +88,9 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                     print(box_wrap(sys_prompt.text, header="Unknown System Prompt"))
 
         # Tools (unknown first in green, known in gray)
-        if flow.tools:
-            unknown_tools = [t for t in flow.tools if t not in KNOWN_TOOLS]
-            known_tools = [t for t in flow.tools if t in KNOWN_TOOLS]
+        if req_flow.tools:
+            unknown_tools = [t for t in req_flow.tools if t not in KNOWN_TOOLS]
+            known_tools = [t for t in req_flow.tools if t in KNOWN_TOOLS]
             tools_display = []
             for t in unknown_tools:
                 tools_display.append(f"{BLUE}{t}{RESET}")
@@ -99,23 +99,23 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
             print(f"## Tools")
             print(f"{', '.join(tools_display)}")
 
-        if flow.messages:
+        if req_flow.messages:
             print("## Messages")
             # Find the last user text content that isn't a system-reminder
             last_user_prompt_index = None
-            for index, message in enumerate(flow.messages):
+            for index, message in enumerate(req_flow.messages):
                 if message.role == 'user':
                     for content in message.content:
                         if content.type == 'text' and not content.text.startswith("<system"):
                             last_user_prompt_index = index
 
-            max_message_index = len(flow.messages)
+            max_message_index = len(req_flow.messages)
             min_message_index = max(max_message_index - 10, 0)
             if last_user_prompt_index is None:
                 print("! Original user prompt lost in the ether")
             else:
                 min_message_index = max(last_user_prompt_index - 1, 0)
-            messages_to_show = flow.messages[min_message_index:max_message_index]
+            messages_to_show = req_flow.messages[min_message_index:max_message_index]
             if min_message_index > 0:
                 print(f"...{min_message_index} more message in context, but trimmed to focus on current prompt...")
 
@@ -137,14 +137,14 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                         print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
 
     if raw_flow.response:
-        if flow.response_error:
+        if res_flow.error:
             print(f"{RED}# Response Error:{RESET} {shorten(raw_flow.response.text, width=1000, placeholder='...')}")
-        elif flow.response_message is not None:
+        elif res_flow.message is not None:
             # SSE response
             print(f"\n{GREEN}# Response{RESET}")
-            print(f"model:: {flow.response_message.model}")
+            print(f"model:: {res_flow.message.model}")
             # Extract text from content blocks
-            for block in flow.response_message.content:
+            for block in res_flow.message.content:
                 text_content = ''
                 if block.type == 'text':
                     text_content = block.text
@@ -156,7 +156,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                 print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
         else:
             print(f"\n{RED}# Strange Response:{RESET}")
-            print(f"model:: {flow.model}")
+            print(f"model:: {req_flow.model}")
 
     print(f"\n# Raw Traces")
     print(f"Written raw request to {raw_request_file}")

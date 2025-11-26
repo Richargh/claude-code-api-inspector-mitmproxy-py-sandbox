@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from hidden.flows import FlowRecord, parse_flow
+from hidden.flows import RequestFlow, ResponseFlow, parse_flow
 from hidden.flows import _parse_sse as parse_sse, _parse_sse_response as parse_sse_response
 
 
@@ -13,38 +13,41 @@ class TestParseFlow(unittest.TestCase):
         """Test that model is extracted from 1a-pre-request.json."""
         flow = self._create_mock_flow("1a-pre-request.json")
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertEqual(record.model, "claude-haiku-4-5-20250510")
+        self.assertEqual(req_flow.model, "claude-haiku-4-5-20250510")
 
     def test_parse_flow_extracts_messages(self):
         """Test that messages are extracted."""
         flow = self._create_mock_flow("1a-pre-request.json")
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertGreater(len(record.messages), 0)
-        self.assertEqual(record.messages[-1].role, "assistant")
+        self.assertGreater(len(req_flow.messages), 0)
+        self.assertEqual(req_flow.messages[-1].role, "assistant")
 
-    def test_parse_flow_returns_flow_record(self):
-        """Test that parse_flow returns a FlowRecord instance."""
+    def test_parse_flow_returns_tuple(self):
+        """Test that parse_flow returns a tuple of (RequestFlow, ResponseFlow)."""
         flow = self._create_mock_flow("1a-pre-request.json")
 
-        record = parse_flow(flow)
+        result = parse_flow(flow)
 
-        self.assertIsInstance(record, FlowRecord)
+        self.assertIsInstance(result, tuple)
+        self.assertEqual(len(result), 2)
+        self.assertIsInstance(result[0], RequestFlow)
+        self.assertIsInstance(result[1], ResponseFlow)
 
     def test_parse_flow_handles_invalid_json(self):
-        """Test that invalid JSON sets request_error."""
+        """Test that invalid JSON sets error."""
         flow = MagicMock()
         flow.request = MagicMock()
         flow.request.text = "not valid json"
         flow.response = None
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertIsNotNone(record.request_error)
-        self.assertIsNone(record.model)
+        self.assertIsNotNone(req_flow.error)
+        self.assertIsNone(req_flow.model)
 
     def test_parse_flow_handles_missing_request(self):
         """Test handling when request is None."""
@@ -52,10 +55,10 @@ class TestParseFlow(unittest.TestCase):
         flow.request = None
         flow.response = None
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertIsNone(record.model)
-        self.assertIsNone(record.request_error)
+        self.assertIsNone(req_flow.model)
+        self.assertIsNone(req_flow.error)
 
     def test_parse_flow_handles_empty_messages(self):
         """Test handling when messages array is empty."""
@@ -64,21 +67,21 @@ class TestParseFlow(unittest.TestCase):
         flow.request.text = json.dumps({"model": "test", "messages": []})
         flow.response = None
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertEqual(record.model, "test")
-        self.assertEqual(len(record.messages), 0)
+        self.assertEqual(req_flow.model, "test")
+        self.assertEqual(len(req_flow.messages), 0)
 
     def test_parse_flow_handles_response_invalid_json(self):
-        """Test that invalid response JSON sets response_error."""
+        """Test that invalid response JSON sets error."""
         flow = self._create_mock_flow("1a-pre-request.json")
         flow.response = MagicMock()
         flow.response.text = "invalid response json"
         flow.response.headers = {'content-type': 'application/json'}
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertIsNotNone(record.response_error)
+        self.assertIsNotNone(res_flow.error)
 
     def test_parse_flow_handles_valid_response(self):
         """Test that valid response JSON doesn't set error."""
@@ -87,9 +90,9 @@ class TestParseFlow(unittest.TestCase):
         flow.response.text = json.dumps({"result": "ok"})
         flow.response.headers = {'content-type': 'application/json'}
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertIsNone(record.response_error)
+        self.assertIsNone(res_flow.error)
 
     def _create_mock_flow(self, request_file, response_file=None):
         """Helper to create a mock flow from fixture files."""
@@ -201,24 +204,24 @@ class TestParseFlowWithSSE(unittest.TestCase):
         """Test parse_flow with SSE response from 1b-pre-response.json."""
         flow = self._create_mock_flow("1a-pre-request.json", "1b-pre-response.json")
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertIsNotNone(record.response_message)
-        self.assertEqual(record.response_message.model, 'claude-haiku-4-5-20250510')
-        self.assertEqual(record.response_message.id, 'msg_1234')
-        self.assertEqual(len(record.response_message.content), 1)
-        self.assertIn('isNewTopic', record.response_message.content[0].text)
-        self.assertEqual(record.response_message.stop_reason, 'end_turn')
-        self.assertEqual(record.response_message.usage.input_tokens, 120)
-        self.assertEqual(record.response_message.usage.output_tokens, 30)
+        self.assertIsNotNone(res_flow.message)
+        self.assertEqual(res_flow.message.model, 'claude-haiku-4-5-20250510')
+        self.assertEqual(res_flow.message.id, 'msg_1234')
+        self.assertEqual(len(res_flow.message.content), 1)
+        self.assertIn('isNewTopic', res_flow.message.content[0].text)
+        self.assertEqual(res_flow.message.stop_reason, 'end_turn')
+        self.assertEqual(res_flow.message.usage.input_tokens, 120)
+        self.assertEqual(res_flow.message.usage.output_tokens, 30)
 
     def test_parse_flow_sse_no_error(self):
-        """Test that SSE response doesn't set response_error."""
+        """Test that SSE response doesn't set error."""
         flow = self._create_mock_flow("1a-pre-request.json", "1b-pre-response.json")
 
-        record = parse_flow(flow)
+        req_flow, res_flow = parse_flow(flow)
 
-        self.assertIsNone(record.response_error)
+        self.assertIsNone(res_flow.error)
 
     def _create_mock_flow(self, request_file, response_file=None):
         """Helper to create a mock flow from fixture files."""

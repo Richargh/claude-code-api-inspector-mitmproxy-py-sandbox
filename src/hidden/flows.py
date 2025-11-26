@@ -63,29 +63,33 @@ class ResponseMessage:
     context_management: Optional[dict] = None
 
 @dataclass
-class FlowRecord:
-    pretty_request: Optional[str] = None
-    pretty_response: Optional[str] = None
+class RequestFlow:
+    pretty: Optional[str] = None
     model: Optional[str] = None
-    request_keys: Optional[list[str]] = None
+    keys: Optional[list[str]] = None
     messages: list[Message] = field(default_factory=list)
     system_prompts: list[SystemPrompt] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
-    request_error: Optional[str] = None
-    response_error: Optional[str] = None
-    # Full response message from SSE
-    response_message: Optional[ResponseMessage] = None
+    error: Optional[str] = None
+
+@dataclass
+class ResponseFlow:
+    pretty: Optional[str] = None
+    error: Optional[str] = None
+    message: Optional[ResponseMessage] = None
 
 
-def parse_flow(raw_flow) -> FlowRecord:
-    """Parse an HTTP flow and return a FlowRecord with extracted data."""
-    record = FlowRecord()
+def parse_flow(raw_flow) -> tuple[RequestFlow, ResponseFlow]:
+    """Parse an HTTP flow and return a tuple of (RequestFlow, ResponseFlow)."""
+    req_flow = RequestFlow()
+    res_flow = ResponseFlow()
+
     if raw_flow.request:
         try:
             req = json.loads(raw_flow.request.text)
-            record.pretty_request = json.dumps(req, indent=2)
-            record.request_keys = list(req.keys())
-            record.model = req.get('model')
+            req_flow.pretty = json.dumps(req, indent=2)
+            req_flow.keys = list(req.keys())
+            req_flow.model = req.get('model')
 
             # Parse messages
             messages = req.get('messages', [])
@@ -106,25 +110,25 @@ def parse_flow(raw_flow) -> FlowRecord:
                             parsed_content.append(MessageContent(type='tool_use', tool_name=item.get('name', '')))
                         elif item_type == 'tool_result':
                             parsed_content.append(MessageContent(type='tool_result', text=item.get('content', '')))
-                record.messages.append(Message(role=role, content=parsed_content))
+                req_flow.messages.append(Message(role=role, content=parsed_content))
 
             # Parse system prompts
             system = req.get('system', [])
             for sys_item in system:
                 text = sys_item.get('text', '')
-                record.system_prompts.append(SystemPrompt(text=text))
+                req_flow.system_prompts.append(SystemPrompt(text=text))
 
             # Parse tools
             tools = req.get('tools', [])
             for tool in tools:
                 name = tool.get('name', '')
                 if name:
-                    record.tools.append(name)
+                    req_flow.tools.append(name)
 
         except json.JSONDecodeError as e:
-            record.request_error = str(e)
+            req_flow.error = str(e)
         except (KeyError, IndexError, TypeError) as e:
-            record.request_error = str(e)
+            req_flow.error = str(e)
 
     if raw_flow.response:
         response_text = raw_flow.response.text
@@ -132,17 +136,17 @@ def parse_flow(raw_flow) -> FlowRecord:
         if 'text/event-stream' in content_type:
             try:
                 sse_data = _parse_sse_response(response_text)
-                record.pretty_response = json.dumps(asdict(sse_data), indent=2) + "\n" + response_text
-                record.response_message = sse_data
+                res_flow.pretty = json.dumps(asdict(sse_data), indent=2) + "\n" + response_text
+                res_flow.message = sse_data
             except Exception as e:
-                record.response_error = str(e)
+                res_flow.error = str(e)
         else:
             try:
                 json.loads(response_text)
             except json.JSONDecodeError as e:
-                record.response_error = str(e)
+                res_flow.error = str(e)
 
-    return record
+    return (req_flow, res_flow)
 
 
 def _parse_sse_response(text: str) -> ResponseMessage:
