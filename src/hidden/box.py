@@ -3,10 +3,10 @@ from hidden.colors import RESET
 
 ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 
-def print_box(text: str, width: int = 100) -> None:
-    """Print text inside an ASCII box."""
+def box_wrap(text: str, width: int = 100) -> str:
+    """Return text inside an ASCII box."""
     inner = width - 4
-    print("┌" + "─" * (width - 2) + "┐")
+    lines = ["┌" + "─" * (width - 2) + "┐"]
     for line in text.splitlines():
         # Wrap long lines while preserving ANSI codes
         while _visible_len(line) > inner:
@@ -21,11 +21,12 @@ def print_box(text: str, width: int = 100) -> None:
                     cut += 1
             chunk = line[:cut]
             reset = RESET if '\x1b[' in chunk else ''
-            print("│ " + chunk + reset + " " * (inner - visible) + " │")
+            lines.append("│ " + chunk + reset + " " * (inner - visible) + " │")
             line = line[cut:]
         pad = inner - _visible_len(line)
-        print("│ " + line + " " * pad + " │")
-    print("└" + "─" * (width - 2) + "┘")
+        lines.append("│ " + line + " " * pad + " │")
+    lines.append("└" + "─" * (width - 2) + "┘")
+    return "\n".join(lines)
 
 def _visible_len(s: str) -> int:
     """Return the visible length of a string, ignoring ANSI escape codes."""

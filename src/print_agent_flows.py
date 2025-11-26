@@ -2,7 +2,7 @@ from pathlib import Path
 from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
 from hidden.flows import parse_flow
 from hidden.diff import diff_system_prompts
-from hidden.box import print_box
+from hidden.box import box_wrap
 
 # Known tools that should be shown in gray
 KNOWN_TOOLS = {
@@ -82,11 +82,11 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                     known_system_prompt = known_system_prompts[text_start]
                     diff = diff_system_prompts(known_system_prompt, sys_prompt.text, colorize)
                     if diff == '':
-                        print_box(f"Known: {text_start}...")
+                        print(box_wrap(f"Known: {text_start}..."))
                     else:
-                        print_box(f"Changed: {text_start}...\n{diff}")
+                        print(box_wrap(f"Changed: {text_start}...\n{diff}"))
                 else:
-                    print_box(sys_prompt.text[:100])
+                    print(box_wrap(sys_prompt.text[:100]))
 
         # Tools (unknown first in green, known in gray)
         if flow.tools:
