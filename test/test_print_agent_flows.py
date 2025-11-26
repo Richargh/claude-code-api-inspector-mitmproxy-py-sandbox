@@ -38,6 +38,7 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
+        # Tool names appear in box headers like "┌─tool_use Read ─"
         self.assertIn("tool_use Read", output)
         self.assertIn("tool_use Edit", output)
 

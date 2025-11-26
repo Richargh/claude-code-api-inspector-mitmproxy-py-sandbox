@@ -35,6 +35,45 @@ class TestBox(unittest.TestCase):
 ┌────────┐
 └────────┘""")
 
+    def test_with_header(self):
+        self.assertEqual(box_wrap("hello", width=20, header="text"), """\
+┌─text─────────────┐
+│ hello            │
+└──────────────────┘""")
+
+    def test_with_footer(self):
+        self.assertEqual(box_wrap("hello", width=20, footer="tool_result"), """\
+┌──────────────────┐
+│ hello            │
+└──tool_result─────┘""")
+
+    def test_with_header_and_footer(self):
+        self.assertEqual(box_wrap("hello", width=20, header="tool_use Bash", footer="tool_result"), """\
+┌─tool_use Bash────┐
+│ hello            │
+└──tool_result─────┘""")
+
+    def test_no_top_border(self):
+        self.assertEqual(box_wrap("hello", width=20, top=False), """\
+│ hello            │
+└──────────────────┘""")
+
+    def test_no_bottom_border(self):
+        self.assertEqual(box_wrap("hello", width=20, bottom=False), """\
+┌──────────────────┐
+│ hello            │""")
+
+    def test_tool_use_to_tool_result(self):
+        """Test connecting tool_use (no bottom) to tool_result (no top)."""
+        tool_use = box_wrap("command: ls", width=20, header="tool_use Bash", bottom=False)
+        tool_result = box_wrap("output", width=20, top=False, footer="tool_result")
+        self.assertEqual(tool_use, """\
+┌─tool_use Bash────┐
+│ command: ls      │""")
+        self.assertEqual(tool_result, """\
+│ output           │
+└──tool_result─────┘""")
+
 
 if __name__ == '__main__':
     unittest.main()

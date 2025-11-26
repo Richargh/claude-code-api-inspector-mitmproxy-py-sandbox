@@ -3,10 +3,37 @@ from hidden.colors import RESET
 
 ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 
-def box_wrap(text: str, width: int = 100) -> str:
-    """Return text inside an ASCII box."""
+def box_wrap(
+    text: str,
+    width: int = 100,
+    header: str = None,
+    footer: str = None,
+    top: bool = True,
+    bottom: bool = True
+) -> str:
+    """Return text inside an ASCII box.
+
+    Args:
+        text: The content to display
+        width: Total width of the box
+        header: Optional label for the top border (e.g., "text" or "tool_use Bash")
+        footer: Optional label for the bottom border (e.g., "tool_result")
+        top: Whether to show the top border
+        bottom: Whether to show the bottom border
+    """
     inner = width - 4
-    lines = ["┌" + "─" * (width - 2) + "┐"]
+    lines = []
+
+    # Top border
+    if top:
+        if header:
+            label = f"─{header}─"
+            remaining = width - 2 - len(label)
+            lines.append("┌" + label + "─" * remaining + "┐")
+        else:
+            lines.append("┌" + "─" * (width - 2) + "┐")
+
+    # Content
     for line in text.splitlines():
         # Wrap long lines while preserving ANSI codes
         while _visible_len(line) > inner:
@@ -25,7 +52,16 @@ def box_wrap(text: str, width: int = 100) -> str:
             line = line[cut:]
         pad = inner - _visible_len(line)
         lines.append("│ " + line + " " * pad + " │")
-    lines.append("└" + "─" * (width - 2) + "┘")
+
+    # Bottom border
+    if bottom:
+        if footer:
+            label = f"──{footer}─"
+            remaining = width - 2 - len(label)
+            lines.append("└" + label + "─" * remaining + "┘")
+        else:
+            lines.append("└" + "─" * (width - 2) + "┘")
+
     return "\n".join(lines)
 
 def _visible_len(s: str) -> int:

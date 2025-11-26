@@ -89,14 +89,14 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
             for msg in messages_to_show:
                 print(f"@{msg.role}:")
                 for content in msg.content:
-                    if content.type == 'text':
-                        text_preview = (content.text or '')[:200]
-                        print(border_line(text_preview))
-                    elif content.type == 'tool_use':
-                        print(border_line_tool_use(content.tool_name, ""))
+                    if content.type == 'tool_use':
+                        print(box_wrap("", header = f"{content.type} {content.tool_name} ", bottom=False))
                     elif content.type == 'tool_result':
                         text_preview = (content.text or '')[:200]
-                        print(border_line_tool_result(text_preview))
+                        print(box_wrap(text_preview, footer=content.type, top=False))
+                    else:
+                        text_preview = (content.text or '')[:200]
+                        print(box_wrap(text_preview, header=content.type))
 
     if raw_flow.response:
         if flow.response_error:
