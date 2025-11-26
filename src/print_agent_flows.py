@@ -1,4 +1,5 @@
 import json
+import re
 from textwrap import shorten
 from pathlib import Path
 from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
@@ -44,6 +45,24 @@ known_system_prompts = {
     pre_prompt_start: pre_prompt,
     standard_prompt_start: standard_prompt
 }
+
+def _tool_name_to_filename(tool_name: str) -> str:
+    """Convert PascalCase tool name to kebab-case filename."""
+    # Insert hyphen before uppercase letters and lowercase them
+    kebab = re.sub(r'(?<!^)(?=[A-Z])', '-', tool_name).lower()
+    return f"tool-{kebab}-description.md"
+
+def _load_known_tool_descriptions() -> dict[str, str]:
+    """Load known tool descriptions from files."""
+    descriptions = {}
+    for tool_name in KNOWN_TOOLS:
+        filename = _tool_name_to_filename(tool_name)
+        filepath = module_dir / 'hidden' / filename
+        if filepath.exists():
+            descriptions[tool_name] = filepath.read_text()
+    return descriptions
+
+known_tool_descriptions = _load_known_tool_descriptions()
 
 def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     req_flow, res_flow = parse_flow(raw_flow)
@@ -98,6 +117,16 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                 tools_display.append(f"{GRAY}{t}{RESET}")
             print(f"## Tools")
             print(f"{', '.join(tools_display)}")
+
+            # Show diffs for changed tool descriptions
+            for tool_name in req_flow.tools:
+                if tool_name in known_tool_descriptions and tool_name in req_flow.tool_descriptions:
+                    known_desc = known_tool_descriptions[tool_name]
+                    actual_desc = req_flow.tool_descriptions[tool_name]
+                    if known_desc != actual_desc:
+                        diff = diff_system_prompts(known_desc, actual_desc, colorize)
+                        if diff:
+                            print(box_wrap(diff, header=f"Changed Tool Description: {tool_name}"))
 
         if req_flow.messages:
             print("## Messages")
