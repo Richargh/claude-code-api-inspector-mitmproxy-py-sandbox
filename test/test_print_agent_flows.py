@@ -16,7 +16,7 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
-        self.assertIn("model: claude-opus-4-5-20230415", output)
+        self.assertIn("model:: claude-opus-4-5-20230415", output)
 
     def test_response_extracts_messages(self):
         """Test that messages are extracted and displayed."""
@@ -26,7 +26,7 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
-        self.assertIn("messages:", output)
+        self.assertIn("## Messages", output)
         self.assertIn("@user:", output)
         self.assertIn("@assistant:", output)
 
@@ -59,8 +59,8 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
-        self.assertIn("system:", output)
-        self.assertIn("You are Cl", output)  # First 10 chars
+        self.assertIn("## System", output)
+        self.assertIn("You are Claude Code", output)
 
     def test_response_extracts_tools(self):
         """Test that tools are extracted and displayed."""
@@ -70,7 +70,7 @@ class TableFlowsTest(unittest.TestCase):
             response(flow)
             output = mock_stdout.getvalue()
 
-        self.assertIn("tools:", output)
+        self.assertIn("## Tools", output)
         self.assertIn("Task", output)
 
     def test_response_handles_invalid_json(self):
