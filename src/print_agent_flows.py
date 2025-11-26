@@ -56,6 +56,9 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
         if flow.messages:
             print("## Messages")
             messages_to_show = flow.messages[-10:]
+            trimmed_message_count = len(flow.messages) - 10
+            if trimmed_message_count > 0:
+                print(f"...{trimmed_message_count} more message in context, but trimmed for brevity...")
             for msg in messages_to_show:
                 print(f"@{msg.role}:")
                 for content in msg.content:
