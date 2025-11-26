@@ -62,11 +62,11 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                     known_system_prompt = known_system_prompts[text_start]
                     diff = diff_system_prompts(known_system_prompt, sys_prompt.text, colorize)
                     if diff == '':
-                        print(box_wrap(f"Known: {text_start}..."))
+                        print(box_wrap(f"{text_start}[...]", header="Known System Prompt"))
                     else:
-                        print(box_wrap(f"Changed: {text_start}...\n{diff}"))
+                        print(box_wrap(f"{text_start}[...]\n\n{diff}", header="Changed System Prompt"))
                 else:
-                    print(box_wrap(sys_prompt.text[:100]))
+                    print(box_wrap(f"{sys_prompt.text[:100]}[...]", header="Unknown System Prompt"))
 
         # Tools (unknown first in green, known in gray)
         if flow.tools:
