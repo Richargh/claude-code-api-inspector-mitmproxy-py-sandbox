@@ -85,7 +85,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
                     else:
                         print(box_wrap(f"{text_start}[...]\n\n{diff}", header="Changed System Prompt"))
                 else:
-                    print(box_wrap(f"{shorten(sys_prompt.text, width=100, placeholder='...')}[...]", header="Unknown System Prompt"))
+                    print(box_wrap(sys_prompt.text, header="Unknown System Prompt"))
 
         # Tools (unknown first in green, known in gray)
         if flow.tools:
