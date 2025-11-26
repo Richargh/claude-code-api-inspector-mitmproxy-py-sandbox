@@ -116,7 +116,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
             else:
                 min_message_index = last_user_prompt_index
             messages_to_show = flow.messages[min_message_index:max_message_index]
-            trimmed_message_count = len(messages_to_show)
+            trimmed_message_count = max_message_index - len(messages_to_show)
             if trimmed_message_count > 0:
                 print(f"...{trimmed_message_count} more message in context, but trimmed for brevity...")
 
