@@ -19,15 +19,8 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
 
     # Tools (unknown first in green, known in gray)
     if req_flow.tools:
-        unknown_tools = [t for t in req_flow.tools if t not in KNOWN_TOOLS]
-        known_tools = [t for t in req_flow.tools if t in KNOWN_TOOLS]
-        tools_display = []
-        for t in unknown_tools:
-            tools_display.append(f"{BLUE}{t}{RESET}")
-        for t in known_tools:
-            tools_display.append(f"{GRAY}{t}{RESET}")
         print(f"## Tools")
-        print(f"{', '.join(tools_display)}")
+        _print_tool_knowledge(req_flow)
 
         # Show diffs for changed tool descriptions
         for tool_name in req_flow.tools:
@@ -89,6 +82,17 @@ def _print_system_prompt(colorize, sys_prompt):
             print(box_wrap(f"{text_start}[...]\n\n{diff}", header="Changed System Prompt"))
     else:
         print(box_wrap(sys_prompt.text, header="Unknown System Prompt"))
+
+
+def _print_tool_knowledge(req_flow):
+    unknown_tools = [t for t in req_flow.tools if t not in KNOWN_TOOLS]
+    known_tools = [t for t in req_flow.tools if t in KNOWN_TOOLS]
+    tools_display = []
+    for t in unknown_tools:
+        tools_display.append(f"{BLUE}{t}{RESET}")
+    for t in known_tools:
+        tools_display.append(f"{GRAY}{t}{RESET}")
+    print(f"{', '.join(tools_display)}")
 
 
 # Known tools that should be shown in gray
