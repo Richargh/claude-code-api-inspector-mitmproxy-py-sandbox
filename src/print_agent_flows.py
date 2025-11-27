@@ -66,8 +66,9 @@ known_tool_descriptions = _load_known_tool_descriptions()
 
 def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
     req_flow, res_flow = parse_flow(raw_flow)
-    raw_request_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-req.json"
-    raw_response_file = Path(__file__).parent.parent / 'trace' / f"{datetime.now().isoformat()}-res.json"
+    now = datetime.now().isoformat()
+    raw_request_file = Path(__file__).parent.parent / 'trace' / f"{now}-req.json"
+    raw_response_file = Path(__file__).parent.parent / 'trace' / f"{now}-res.json"
     if req_flow.pretty:
         with open(raw_request_file, "w") as f:
             f.write(req_flow.pretty)
