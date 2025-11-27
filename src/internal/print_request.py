@@ -15,16 +15,7 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
     if req_flow.system_prompts:
         print("## System")
         for sys_prompt in req_flow.system_prompts:
-            text_start = sys_prompt.text.split('.')[0]
-            if text_start in known_system_prompts:
-                known_system_prompt = known_system_prompts[text_start]
-                diff = diff_system_prompts(known_system_prompt, sys_prompt.text, colorize)
-                if diff == '':
-                    print(box_wrap(f"{text_start}[...]", header="Known System Prompt"))
-                else:
-                    print(box_wrap(f"{text_start}[...]\n\n{diff}", header="Changed System Prompt"))
-            else:
-                print(box_wrap(sys_prompt.text, header="Unknown System Prompt"))
+            _print_system_prompt(colorize, sys_prompt)
 
     # Tools (unknown first in green, known in gray)
     if req_flow.tools:
@@ -86,6 +77,18 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
                     text_preview = shorten(content.text or '', width=200, placeholder='...')
                     print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
 
+
+def _print_system_prompt(colorize, sys_prompt):
+    text_start = sys_prompt.text.split('.')[0]
+    if text_start in known_system_prompts:
+        known_system_prompt = known_system_prompts[text_start]
+        diff = diff_system_prompts(known_system_prompt, sys_prompt.text, colorize)
+        if diff == '':
+            print(box_wrap(f"{text_start}[...]", header="Known System Prompt"))
+        else:
+            print(box_wrap(f"{text_start}[...]\n\n{diff}", header="Changed System Prompt"))
+    else:
+        print(box_wrap(sys_prompt.text, header="Unknown System Prompt"))
 
 
 # Known tools that should be shown in gray
