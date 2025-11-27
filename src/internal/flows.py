@@ -2,6 +2,21 @@ import json
 from dataclasses import dataclass, field, asdict
 from typing import Optional, Union
 
+@dataclass
+class RequestFlow:
+    pretty: Optional[str] = None
+    model: Optional[str] = None
+    keys: Optional[list[str]] = None
+    messages: list['Message'] = field(default_factory=list)
+    system_prompts: list['SystemPrompt'] = field(default_factory=list)
+    tools: list[str] = field(default_factory=list)
+    tool_descriptions: dict[str, str] = field(default_factory=dict)
+    error: Optional[str] = None
+
+@dataclass
+class Message:
+    role: str
+    content: list['MessageContent'] = field(default_factory=list)
 
 @dataclass
 class MessageContent:
@@ -10,20 +25,28 @@ class MessageContent:
     tool_name: Optional[str] = None
 
 @dataclass
-class Message:
-    role: str
-    content: list[MessageContent] = field(default_factory=list)
-
-@dataclass
 class SystemPrompt:
     text: str
 
+
+
 @dataclass
-class Usage:
-    input_tokens: Optional[int] = None
-    output_tokens: Optional[int] = None
-    cache_creation_input_tokens: Optional[int] = None
-    cache_read_input_tokens: Optional[int] = None
+class ResponseFlow:
+    pretty: Optional[str] = None
+    error: Optional[str] = None
+    message: Optional['ResponseMessage'] = None
+
+@dataclass
+class ResponseMessage:
+    id: Optional[str] = None
+    type: str = 'message'
+    role: str = 'assistant'
+    model: Optional[str] = None
+    content: list[Union['TextBlock', 'ToolUseBlock', 'ServerToolUseBlock', 'ServerToolResultBlock']] = field(default_factory=list)
+    stop_reason: Optional[str] = None
+    stop_sequence: Optional[str] = None
+    usage: Optional['Usage'] = None
+    context_management: Optional[dict] = None
 
 @dataclass
 class TextBlock:
@@ -51,33 +74,11 @@ class ServerToolResultBlock:
     content: Optional[list] = None
 
 @dataclass
-class ResponseMessage:
-    id: Optional[str] = None
-    type: str = 'message'
-    role: str = 'assistant'
-    model: Optional[str] = None
-    content: list[Union[TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock]] = field(default_factory=list)
-    stop_reason: Optional[str] = None
-    stop_sequence: Optional[str] = None
-    usage: Optional[Usage] = None
-    context_management: Optional[dict] = None
-
-@dataclass
-class RequestFlow:
-    pretty: Optional[str] = None
-    model: Optional[str] = None
-    keys: Optional[list[str]] = None
-    messages: list[Message] = field(default_factory=list)
-    system_prompts: list[SystemPrompt] = field(default_factory=list)
-    tools: list[str] = field(default_factory=list)
-    tool_descriptions: dict[str, str] = field(default_factory=dict)
-    error: Optional[str] = None
-
-@dataclass
-class ResponseFlow:
-    pretty: Optional[str] = None
-    error: Optional[str] = None
-    message: Optional[ResponseMessage] = None
+class Usage:
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    cache_creation_input_tokens: Optional[int] = None
+    cache_read_input_tokens: Optional[int] = None
 
 
 def parse_flow(raw_flow) -> tuple[RequestFlow, ResponseFlow]:
