@@ -2,8 +2,11 @@ import json
 import re
 from textwrap import shorten
 from pathlib import Path
+from typing import Union
+
 from hidden.colors import RED, GREEN, BLUE, GRAY, RESET, Colorize
-from hidden.flows import parse_flow, RequestFlow, ResponseFlow
+from hidden.flows import parse_flow, RequestFlow, ResponseFlow, TextBlock, ToolUseBlock, ServerToolUseBlock, \
+    ServerToolResultBlock
 from hidden.diff import diff_system_prompts
 from hidden.box import box_wrap
 from datetime import datetime
@@ -92,17 +95,22 @@ def _print_response(raw_flow, res_flow: ResponseFlow):
         print(f"model:: {res_flow.message.model}")
         # Extract text from content blocks
         for block in res_flow.message.content:
-            text_content = ''
-            if block.type == 'text':
-                text_content = block.text
-            if block.type == 'tool_use':
-                text_content = json.dumps(block.input, indent=2)
-            header = block.type
-            if block.type == 'tool_use' and hasattr(block, 'name'):
-                header = f"{block.type} {block.name}"
-            print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
+            _print_response_block(block)
     else:
         print(f"\n{RED}# Strange Response{RESET}")
+
+
+def _print_response_block(block: Union[TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock]):
+    text_content = ''
+    if block.type == 'text':
+        text_content = block.text
+    if block.type == 'tool_use':
+        text_content = json.dumps(block.input, indent=2)
+    header = block.type
+    if block.type == 'tool_use' and hasattr(block, 'name'):
+        header = f"{block.type} {block.name}"
+    print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
+
 
 def _print_request(colorize: Colorize, req_flow: RequestFlow):
     print(f"\n{BLUE}# Request:{RESET}")
