@@ -7,19 +7,19 @@ class RequestFlow:
     pretty: Optional[str] = None
     model: Optional[str] = None
     keys: Optional[list[str]] = None
-    messages: list['Message'] = field(default_factory=list)
+    messages: list['RequestMessage'] = field(default_factory=list)
     system_prompts: list['SystemPrompt'] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
     tool_descriptions: dict[str, str] = field(default_factory=dict)
     error: Optional[str] = None
 
 @dataclass
-class Message:
+class RequestMessage:
     role: str
-    content: list['MessageContent'] = field(default_factory=list)
+    content: list['RequestMessageContent'] = field(default_factory=list)
 
 @dataclass
-class MessageContent:
+class RequestMessageContent:
     type: str
     text: Optional[str] = None
     tool_name: Optional[str] = None
@@ -101,18 +101,18 @@ def parse_flow(raw_flow) -> tuple[RequestFlow, ResponseFlow]:
                 parsed_content = []
                 if isinstance(content_list, str):
                     # Handle simple string content format
-                    parsed_content.append(MessageContent(type='text', text=content_list))
+                    parsed_content.append(RequestMessageContent(type='text', text=content_list))
                 else:
                     # Handle list of content blocks
                     for item in content_list:
                         item_type = item.get('type', '')
                         if item_type == 'text':
-                            parsed_content.append(MessageContent(type='text', text=item.get('text', '')))
+                            parsed_content.append(RequestMessageContent(type='text', text=item.get('text', '')))
                         elif item_type == 'tool_use':
-                            parsed_content.append(MessageContent(type='tool_use', tool_name=item.get('name', '')))
+                            parsed_content.append(RequestMessageContent(type='tool_use', tool_name=item.get('name', '')))
                         elif item_type == 'tool_result':
-                            parsed_content.append(MessageContent(type='tool_result', text=item.get('content', '')))
-                req_flow.messages.append(Message(role=role, content=parsed_content))
+                            parsed_content.append(RequestMessageContent(type='tool_result', text=item.get('content', '')))
+                req_flow.messages.append(RequestMessage(role=role, content=parsed_content))
 
             # Parse system prompts
             system = req.get('system', [])

@@ -4,7 +4,7 @@ from typing import Optional
 from internal.box import box_wrap
 from internal.colors import Colorize, BLUE, RESET, GRAY
 from internal.diff import diff_system_prompts
-from internal.flows import RequestFlow, Message
+from internal.flows import RequestFlow, RequestMessage
 from internal.known_prompts import known_tools, load_known_system_prompts, load_known_tool_descriptions
 
 KNOWN_TOOLS = known_tools
@@ -43,7 +43,7 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
             _print_message(message, actual_index, should_highlight)
 
 
-def _print_message(message: Message, actual_index: int, should_highlight: bool):
+def _print_message(message: RequestMessage, actual_index: int, should_highlight: bool):
     color_start = "" if should_highlight else GRAY
     color_end = "" if should_highlight else RESET
     print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
@@ -59,7 +59,7 @@ def _print_message(message: Message, actual_index: int, should_highlight: bool):
             print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
 
 
-def _filter_relevant_messages(all_messages: list[Message]) -> tuple[list[Message], Optional[int]]:
+def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[RequestMessage], Optional[int]]:
     most_recent_user_prompt_index = None
     for index, message in enumerate(all_messages):
         if message.role == 'user':
