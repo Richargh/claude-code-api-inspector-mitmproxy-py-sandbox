@@ -70,6 +70,7 @@ class RequestFlow:
     messages: list[Message] = field(default_factory=list)
     system_prompts: list[SystemPrompt] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
+    tool_descriptions: dict[str, str] = field(default_factory=dict)
     error: Optional[str] = None
 
 @dataclass
@@ -124,6 +125,9 @@ def parse_flow(raw_flow) -> tuple[RequestFlow, ResponseFlow]:
                 name = tool.get('name', '')
                 if name:
                     req_flow.tools.append(name)
+                    description = tool.get('description', '')
+                    if description:
+                        req_flow.tool_descriptions[name] = description
 
         except json.JSONDecodeError as e:
             req_flow.error = str(e)
