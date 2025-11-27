@@ -6,7 +6,7 @@ from typing import Optional
 from internal.box import box_wrap
 from internal.colors import Colorize, BLUE, RESET, GRAY
 from internal.diff import diff_system_prompts
-from internal.flows import RequestFlow
+from internal.flows import RequestFlow, Message
 
 
 def print_request(colorize: Colorize, req_flow: RequestFlow):
@@ -30,28 +30,16 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
     if req_flow.messages:
         print("## Messages")
         # Find the last user text content that isn't a system-reminder
-        last_user_prompt_index = None
-        for index, message in enumerate(req_flow.messages):
-            if message.role == 'user':
-                for content in message.content:
-                    if content.type == 'text' and not content.text.startswith("<system"):
-                        last_user_prompt_index = index
-
-        max_message_index = len(req_flow.messages)
-        min_message_index = max(max_message_index - 10, 0)
-        if last_user_prompt_index is None:
-            print("! Original user prompt lost in the ether")
-        else:
-            min_message_index = max(last_user_prompt_index - 1, 0)
-        messages_to_show = req_flow.messages[min_message_index:max_message_index]
-        if min_message_index > 0:
-            print(f"...{min_message_index} more message in context, but trimmed to focus on current prompt...")
+        messages_to_show, most_recent_user_prompt_index = _filter_relevant_messages(req_flow.messages)
+        start_message_index = len(req_flow.messages) - len(messages_to_show)
+        if start_message_index > 0:
+            print(f"...{start_message_index} more message in context, but trimmed to focus on current prompt...")
 
         for index, message in enumerate(messages_to_show):
-            actual_index = min_message_index + index
-            is_highlight = last_user_prompt_index == actual_index
-            color_start = "" if is_highlight else GRAY
-            color_end = "" if is_highlight else RESET
+            actual_index = start_message_index + index
+            should_highlight = most_recent_user_prompt_index == actual_index
+            color_start = "" if should_highlight else GRAY
+            color_end = "" if should_highlight else RESET
             print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
             for content_idx, content in enumerate(message.content):
 
@@ -64,6 +52,24 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
                 else:
                     text_preview = shorten(content.text or '', width=200, placeholder='...')
                     print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
+
+
+def _filter_relevant_messages(all_messages: list[Message]) -> tuple[list[Message], Optional[int]]:
+    most_recent_user_prompt_index = None
+    for index, message in enumerate(all_messages):
+        if message.role == 'user':
+            for content in message.content:
+                if content.type == 'text' and not content.text.startswith("<system"):
+                    most_recent_user_prompt_index = index
+
+    max_message_index = len(all_messages)
+    min_message_index = max(max_message_index - 10, 0)
+    if most_recent_user_prompt_index is None:
+        print("! Original user prompt lost in the ether")
+    else:
+        min_message_index = max(most_recent_user_prompt_index - 1, 0)
+    messages_to_show = all_messages[min_message_index:max_message_index]
+    return messages_to_show, most_recent_user_prompt_index
 
 
 def _print_tool_description_diff(colorize: bool, tool_name: str, tool_description: Optional[str]):
