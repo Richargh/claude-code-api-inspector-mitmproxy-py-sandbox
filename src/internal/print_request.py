@@ -1,6 +1,7 @@
 from textwrap import shorten
 import re
 from pathlib import Path
+from typing import Optional
 
 from internal.box import box_wrap
 from internal.colors import Colorize, BLUE, RESET, GRAY
@@ -24,13 +25,7 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
 
         # Show diffs for changed tool descriptions
         for tool_name in req_flow.tools:
-            if tool_name in known_tool_descriptions and tool_name in req_flow.tool_descriptions:
-                known_desc = known_tool_descriptions[tool_name]
-                actual_desc = req_flow.tool_descriptions[tool_name]
-                if known_desc != actual_desc:
-                    diff = diff_system_prompts(known_desc, actual_desc, colorize)
-                    if diff:
-                        print(box_wrap(diff, header=f"Changed Tool Description: {tool_name}"))
+            _print_tool_description_diff(colorize, tool_name, req_flow.tool_descriptions.get(tool_name))
 
     if req_flow.messages:
         print("## Messages")
@@ -69,6 +64,15 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
                 else:
                     text_preview = shorten(content.text or '', width=200, placeholder='...')
                     print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
+
+
+def _print_tool_description_diff(colorize: bool, tool_name: str, tool_description: Optional[str]):
+    if tool_name in known_tool_descriptions and tool_description is not None:
+        known_desc = known_tool_descriptions[tool_name]
+        if known_desc != tool_description:
+            diff = diff_system_prompts(known_desc, tool_description, colorize)
+            if diff:
+                print(box_wrap(diff, header=f"Changed Tool Description: {tool_name}"))
 
 
 def _print_system_prompt(colorize, sys_prompt):
