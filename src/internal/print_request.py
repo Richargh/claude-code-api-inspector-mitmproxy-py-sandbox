@@ -109,43 +109,49 @@ def _print_tool_knowledge(req_flow):
     print(f"{', '.join(tools_display)}")
 
 
-# Known tools that should be shown in gray
-KNOWN_TOOLS = {
-    "Bash",
-    "BashOutput",
-    "Glob",
-    "Grep",
-    "Read",
-    "Edit",
-    "Write",
-    "Task",
-    "TodoWrite",
-    "WebFetch",
-    "WebSearch",
-    "NotebookEdit",
-    "EnterPlanMode",
-    "ExitPlanMode",
-    "KillShell",
-    "AskUserQuestion",
-    "Skill",
-    "SlashCommand"
-}
+def _load_known_tools() -> set[str]:
+    return {
+        "Bash",
+        "BashOutput",
+        "Glob",
+        "Grep",
+        "Read",
+        "Edit",
+        "Write",
+        "Task",
+        "TodoWrite",
+        "WebFetch",
+        "WebSearch",
+        "NotebookEdit",
+        "EnterPlanMode",
+        "ExitPlanMode",
+        "KillShell",
+        "AskUserQuestion",
+        "Skill",
+        "SlashCommand"
+    }
 
-internal_dir = Path(__file__).parent
-identity_prompt_path = internal_dir / 'system-prompt-identity.md'
-identity_prompt = identity_prompt_path.read_text()
-identity_prompt_start = identity_prompt.split('.')[0]
-pre_prompt_path = internal_dir / 'system-prompt-pre.md'
-pre_prompt = pre_prompt_path.read_text()
-pre_prompt_start = pre_prompt.split('.')[0]
-standard_prompt_path = internal_dir / 'system-prompt-standard.md'
-standard_prompt = standard_prompt_path.read_text()
-standard_prompt_start = standard_prompt.split('.')[0]
-known_system_prompts = {
-    identity_prompt_start: identity_prompt,
-    pre_prompt_start: pre_prompt,
-    standard_prompt_start: standard_prompt
-}
+
+KNOWN_TOOLS = _load_known_tools()
+
+def _load_known_system_prompts() -> dict[str, str]:
+    internal_dir = Path(__file__).parent
+    identity_prompt_path = internal_dir / 'system-prompt-identity.md'
+    identity_prompt = identity_prompt_path.read_text()
+    identity_prompt_start = identity_prompt.split('.')[0]
+    pre_prompt_path = internal_dir / 'system-prompt-pre.md'
+    pre_prompt = pre_prompt_path.read_text()
+    pre_prompt_start = pre_prompt.split('.')[0]
+    standard_prompt_path = internal_dir / 'system-prompt-standard.md'
+    standard_prompt = standard_prompt_path.read_text()
+    standard_prompt_start = standard_prompt.split('.')[0]
+    return {
+        identity_prompt_start: identity_prompt,
+        pre_prompt_start: pre_prompt,
+        standard_prompt_start: standard_prompt
+    }
+
+known_system_prompts = _load_known_system_prompts()
 
 def _tool_name_to_filename(tool_name: str) -> str:
     """Convert PascalCase tool name to kebab-case filename."""
@@ -154,7 +160,7 @@ def _tool_name_to_filename(tool_name: str) -> str:
     return f"tool-{kebab}-description.md"
 
 def _load_known_tool_descriptions() -> dict[str, str]:
-    """Load known tool descriptions from files."""
+    internal_dir = Path(__file__).parent
     descriptions = {}
     for tool_name in KNOWN_TOOLS:
         filename = _tool_name_to_filename(tool_name)
