@@ -76,30 +76,34 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
         _print_request(colorize, req_flow)
 
     if raw_flow.response:
-        if res_flow.error:
-            print(f"{RED}# Response Error:{RESET} {shorten(raw_flow.response.text, width=1000, placeholder='...')}")
-        elif res_flow.message is not None:
-            # SSE response
-            print(f"\n{GREEN}# Response{RESET}")
-            print(f"model:: {res_flow.message.model}")
-            # Extract text from content blocks
-            for block in res_flow.message.content:
-                text_content = ''
-                if block.type == 'text':
-                    text_content = block.text
-                if block.type == 'tool_use':
-                    text_content = json.dumps(block.input, indent=2)
-                header = block.type
-                if block.type == 'tool_use' and hasattr(block, 'name'):
-                    header = f"{block.type} {block.name}"
-                print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
-        else:
-            print(f"\n{RED}# Strange Response:{RESET}")
-            print(f"model:: {req_flow.model}")
+        _print_response(raw_flow, req_flow, res_flow)
 
     print(f"\n# Raw Traces")
     print(f"Written raw request to {raw_request_file}")
     print(f"Written raw response to {raw_response_file}")
+
+
+def _print_response(raw_flow, req_flow: RequestFlow, res_flow: ResponseFlow):
+    if res_flow.error:
+        print(f"{RED}# Response Error:{RESET} {shorten(raw_flow.response.text, width=1000, placeholder='...')}")
+    elif res_flow.message is not None:
+        # SSE response
+        print(f"\n{GREEN}# Response{RESET}")
+        print(f"model:: {res_flow.message.model}")
+        # Extract text from content blocks
+        for block in res_flow.message.content:
+            text_content = ''
+            if block.type == 'text':
+                text_content = block.text
+            if block.type == 'tool_use':
+                text_content = json.dumps(block.input, indent=2)
+            header = block.type
+            if block.type == 'tool_use' and hasattr(block, 'name'):
+                header = f"{block.type} {block.name}"
+            print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
+    else:
+        print(f"\n{RED}# Strange Response:{RESET}")
+        print(f"model:: {req_flow.model}")
 
 
 def _print_request(colorize: Colorize, req_flow: RequestFlow):
