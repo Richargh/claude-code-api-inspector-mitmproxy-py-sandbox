@@ -1,11 +1,11 @@
 from textwrap import shorten
 from pathlib import Path
 
-from hidden.colors import RED, RESET, Colorize
-from hidden.flows import parse_flow, RequestFlow, ResponseFlow
+from internal.colors import RED, RESET, Colorize
+from internal.flows import parse_flow, RequestFlow, ResponseFlow
 from datetime import datetime
-from hidden.print_request import print_request
-from hidden.print_response import _print_response
+from internal.print_request import print_request
+from internal.print_response import _print_response
 
 
 def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:

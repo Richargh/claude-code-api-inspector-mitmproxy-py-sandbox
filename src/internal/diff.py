@@ -1,6 +1,6 @@
 import difflib
 
-from hidden.colors import RED, GREEN, RESET, Colorize
+from internal.colors import RED, GREEN, RESET, Colorize
 
 
 def diff_system_prompts(prompt1: str, prompt2: str, colorize: Colorize = Colorize.ALL) -> str:

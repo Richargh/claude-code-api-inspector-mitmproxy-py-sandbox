@@ -1,5 +1,5 @@
 import re
-from hidden.colors import RESET
+from internal.colors import RESET
 
 ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 

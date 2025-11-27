@@ -10,7 +10,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_response_extracts_model(self):
         """Test that the correct model is extracted from 2a-request.json."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
@@ -20,7 +20,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_response_extracts_messages(self):
         """Test that messages are extracted and displayed."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
@@ -32,7 +32,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_response_extracts_tool_use(self):
         """Test that tool_use content is displayed."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
@@ -44,7 +44,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_response_extracts_tool_result(self):
         """Test that tool_result content is displayed."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
@@ -54,7 +54,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_response_extracts_system_prompts(self):
         """Test that system prompts are extracted."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
@@ -65,7 +65,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_response_extracts_tools(self):
         """Test that tools are extracted and displayed."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
@@ -87,7 +87,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_shows_only_last_10_messages(self):
         """Test that only the last 10 messages are shown."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
@@ -99,7 +99,7 @@ class TableFlowsTest(unittest.TestCase):
 
     def test_highlights_only_last_user_text_not_system(self):
         """Test that only the last user text (not starting with <system) is highlighted."""
-        flow = self._create_mock_flow("hidden_tests/2a-request.json", {"result": "ok"})
+        flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)

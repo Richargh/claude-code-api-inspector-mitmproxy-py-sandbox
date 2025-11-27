@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from hidden.diff import diff_system_prompts, Colorize
+from internal.diff import diff_system_prompts, Colorize
 
 
 class DiffSystemPromptsTest(unittest.TestCase):

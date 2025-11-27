@@ -1,7 +1,7 @@
 import unittest
 
-from hidden.box import box_wrap
-from hidden.colors import GREEN, RESET
+from internal.box import box_wrap
+from internal.colors import GREEN, RESET
 
 class TestBox(unittest.TestCase):
     def test_simple_text(self):

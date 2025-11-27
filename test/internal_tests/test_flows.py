@@ -3,8 +3,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from hidden.flows import RequestFlow, ResponseFlow, parse_flow
-from hidden.flows import _parse_sse as parse_sse, _parse_sse_response as parse_sse_response
+from internal.flows import RequestFlow, ResponseFlow, parse_flow
+from internal.flows import _parse_sse as parse_sse, _parse_sse_response as parse_sse_response
 
 
 class TestParseFlow(unittest.TestCase):

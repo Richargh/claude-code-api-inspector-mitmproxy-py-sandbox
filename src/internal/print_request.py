@@ -2,10 +2,10 @@ from textwrap import shorten
 import re
 from pathlib import Path
 
-from hidden.box import box_wrap
-from hidden.colors import Colorize, BLUE, RESET, GRAY
-from hidden.diff import diff_system_prompts
-from hidden.flows import RequestFlow
+from internal.box import box_wrap
+from internal.colors import Colorize, BLUE, RESET, GRAY
+from internal.diff import diff_system_prompts
+from internal.flows import RequestFlow
 
 
 def print_request(colorize: Colorize, req_flow: RequestFlow):

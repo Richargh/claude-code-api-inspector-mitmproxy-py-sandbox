@@ -1,6 +1,6 @@
 import unittest
 
-from hidden.border_line import border_line, border_line_tool_use, border_line_tool_result
+from internal.border_line import border_line, border_line_tool_use, border_line_tool_result
 
 
 class TestBorderLine(unittest.TestCase):

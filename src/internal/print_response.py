@@ -2,9 +2,9 @@ import json
 from textwrap import shorten
 from typing import Union
 
-from hidden.box import box_wrap
-from hidden.colors import RED, RESET, GREEN
-from hidden.flows import ResponseFlow, TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock
+from internal.box import box_wrap
+from internal.colors import RED, RESET, GREEN
+from internal.flows import ResponseFlow, TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock
 
 
 def _print_response(raw_flow, res_flow: ResponseFlow):
