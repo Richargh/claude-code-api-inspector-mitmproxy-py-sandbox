@@ -1,13 +1,15 @@
 from textwrap import shorten
-import re
-from pathlib import Path
 from typing import Optional
 
 from internal.box import box_wrap
 from internal.colors import Colorize, BLUE, RESET, GRAY
 from internal.diff import diff_system_prompts
 from internal.flows import RequestFlow, Message
+from internal.known_prompts import known_tools, load_known_system_prompts, load_known_tool_descriptions
 
+KNOWN_TOOLS = known_tools
+known_system_prompts = load_known_system_prompts()
+known_tool_descriptions = load_known_tool_descriptions()
 
 def print_request(colorize: Colorize, req_flow: RequestFlow):
     print(f"\n{BLUE}# Request:{RESET}")
@@ -46,7 +48,6 @@ def _print_message(message: Message, actual_index: int, should_highlight: bool):
     color_end = "" if should_highlight else RESET
     print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
     for content_idx, content in enumerate(message.content):
-
         if content.type == 'tool_use':
             print(
                 f"{color_start}{box_wrap('', header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
@@ -107,66 +108,3 @@ def _print_tool_knowledge(req_flow):
     for t in known_tools:
         tools_display.append(f"{GRAY}{t}{RESET}")
     print(f"{', '.join(tools_display)}")
-
-
-def _load_known_tools() -> set[str]:
-    return {
-        "Bash",
-        "BashOutput",
-        "Glob",
-        "Grep",
-        "Read",
-        "Edit",
-        "Write",
-        "Task",
-        "TodoWrite",
-        "WebFetch",
-        "WebSearch",
-        "NotebookEdit",
-        "EnterPlanMode",
-        "ExitPlanMode",
-        "KillShell",
-        "AskUserQuestion",
-        "Skill",
-        "SlashCommand"
-    }
-
-
-KNOWN_TOOLS = _load_known_tools()
-
-def _load_known_system_prompts() -> dict[str, str]:
-    internal_dir = Path(__file__).parent
-    identity_prompt_path = internal_dir / 'system-prompt-identity.md'
-    identity_prompt = identity_prompt_path.read_text()
-    identity_prompt_start = identity_prompt.split('.')[0]
-    pre_prompt_path = internal_dir / 'system-prompt-pre.md'
-    pre_prompt = pre_prompt_path.read_text()
-    pre_prompt_start = pre_prompt.split('.')[0]
-    standard_prompt_path = internal_dir / 'system-prompt-standard.md'
-    standard_prompt = standard_prompt_path.read_text()
-    standard_prompt_start = standard_prompt.split('.')[0]
-    return {
-        identity_prompt_start: identity_prompt,
-        pre_prompt_start: pre_prompt,
-        standard_prompt_start: standard_prompt
-    }
-
-known_system_prompts = _load_known_system_prompts()
-
-def _tool_name_to_filename(tool_name: str) -> str:
-    """Convert PascalCase tool name to kebab-case filename."""
-    # Insert hyphen before uppercase letters and lowercase them
-    kebab = re.sub(r'(?<!^)(?=[A-Z])', '-', tool_name).lower()
-    return f"tool-{kebab}-description.md"
-
-def _load_known_tool_descriptions() -> dict[str, str]:
-    internal_dir = Path(__file__).parent
-    descriptions = {}
-    for tool_name in KNOWN_TOOLS:
-        filename = _tool_name_to_filename(tool_name)
-        filepath = internal_dir / filename
-        if filepath.exists():
-            descriptions[tool_name] = filepath.read_text()
-    return descriptions
-
-known_tool_descriptions = _load_known_tool_descriptions()
