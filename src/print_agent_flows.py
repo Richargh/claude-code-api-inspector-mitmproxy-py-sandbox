@@ -90,10 +90,8 @@ def _print_response(raw_flow, res_flow: ResponseFlow):
     if res_flow.error:
         print(f"{RED}# Response Error:{RESET} {shorten(raw_flow.response.text, width=1000, placeholder='...')}")
     elif res_flow.message is not None:
-        # SSE response
         print(f"\n{GREEN}# Response{RESET}")
         print(f"model:: {res_flow.message.model}")
-        # Extract text from content blocks
         for block in res_flow.message.content:
             _print_response_block(block)
     else:
