@@ -38,20 +38,24 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
         for index, message in enumerate(messages_to_show):
             actual_index = start_message_index + index
             should_highlight = most_recent_user_prompt_index == actual_index
-            color_start = "" if should_highlight else GRAY
-            color_end = "" if should_highlight else RESET
-            print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
-            for content_idx, content in enumerate(message.content):
+            _print_message(message, actual_index, should_highlight)
 
-                if content.type == 'tool_use':
-                    print(
-                        f"{color_start}{box_wrap('', header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
-                elif content.type == 'tool_result':
-                    text_preview = shorten(content.text or '', width=200, placeholder='...')
-                    print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
-                else:
-                    text_preview = shorten(content.text or '', width=200, placeholder='...')
-                    print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
+
+def _print_message(message: Message, actual_index: int, should_highlight: bool):
+    color_start = "" if should_highlight else GRAY
+    color_end = "" if should_highlight else RESET
+    print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
+    for content_idx, content in enumerate(message.content):
+
+        if content.type == 'tool_use':
+            print(
+                f"{color_start}{box_wrap('', header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
+        elif content.type == 'tool_result':
+            text_preview = shorten(content.text or '', width=200, placeholder='...')
+            print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
+        else:
+            text_preview = shorten(content.text or '', width=200, placeholder='...')
+            print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
 
 
 def _filter_relevant_messages(all_messages: list[Message]) -> tuple[list[Message], Optional[int]]:
