@@ -8,7 +8,7 @@ from internal.colors import RED, RESET
 from internal.flow_config import FlowConfig
 from internal.flows import RequestFlow, ResponseFlow, parse_flow
 from internal.print_request import print_request
-from internal.print_response import _print_response
+from internal.print_response import print_response
 
 _DEFAULT_CONFIG = FlowConfig()
 
@@ -29,7 +29,7 @@ def response(raw_flow: http.HTTPFlow, config: FlowConfig = _DEFAULT_CONFIG) -> N
         print_request(req_flow, config)
 
     if raw_flow.response:
-        _print_response(raw_flow, res_flow)
+        print_response(raw_flow, res_flow)
 
     if raw_request_file is not None and raw_response_file is not None:
         print("\n# Raw Traces")

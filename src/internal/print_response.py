@@ -9,7 +9,7 @@ from internal.colors import GREEN, RED, RESET
 from internal.flows import ResponseFlow, ServerToolResultBlock, ServerToolUseBlock, TextBlock, ToolUseBlock
 
 
-def _print_response(raw_flow: http.HTTPFlow, res_flow: ResponseFlow) -> None:
+def print_response(raw_flow: http.HTTPFlow, res_flow: ResponseFlow) -> None:
     if res_flow.error:
         response_text = raw_flow.response.text if raw_flow.response and raw_flow.response.text else ""
         print(f"{RED}# Response Error:{RESET} {shorten(response_text, width=1000, placeholder='...')}")
