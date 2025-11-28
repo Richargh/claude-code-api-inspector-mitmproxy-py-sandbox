@@ -4,6 +4,7 @@ from typing import Optional
 from internal.box import box_wrap
 from internal.colors import Colorize, BLUE, RESET, GRAY
 from internal.diff import diff_system_prompts
+from internal.flow_config import FlowConfig
 from internal.flows import RequestFlow, RequestMessage
 from internal.known_prompts import known_tools, load_known_system_prompts, load_known_tool_descriptions
 
@@ -11,14 +12,14 @@ KNOWN_TOOLS = known_tools
 known_system_prompts = load_known_system_prompts()
 known_tool_descriptions = load_known_tool_descriptions()
 
-def print_request(colorize: Colorize, req_flow: RequestFlow):
+def print_request(req_flow: RequestFlow, config: FlowConfig):
     print(f"\n{BLUE}# Request:{RESET}")
     print(f"model:: {req_flow.model}")
 
     if req_flow.system_prompts:
         print("## System")
         for sys_prompt in req_flow.system_prompts:
-            _print_system_prompt(colorize, sys_prompt)
+            _print_system_prompt(config, sys_prompt)
 
     # Tools (unknown first in green, known in gray)
     if req_flow.tools:
@@ -27,7 +28,7 @@ def print_request(colorize: Colorize, req_flow: RequestFlow):
 
         # Show diffs for changed tool descriptions
         for tool_name in req_flow.tools:
-            _print_tool_description_diff(colorize, tool_name, req_flow.tool_descriptions.get(tool_name))
+            _print_tool_description_diff(tool_name, req_flow.tool_descriptions.get(tool_name), config)
 
     if req_flow.messages:
         print("## Messages")
@@ -77,11 +78,11 @@ def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[
     return messages_to_show, most_recent_user_prompt_index
 
 
-def _print_tool_description_diff(colorize: bool, tool_name: str, tool_description: Optional[str]):
+def _print_tool_description_diff(tool_name: str, tool_description: Optional[str], config: FlowConfig):
     if tool_name in known_tool_descriptions and tool_description is not None:
         known_desc = known_tool_descriptions[tool_name]
         if known_desc != tool_description:
-            diff = diff_system_prompts(known_desc, tool_description, colorize)
+            diff = diff_system_prompts(known_desc, tool_description, config)
             if diff:
                 print(box_wrap(diff, header=f"Changed Tool Description: {tool_name}"))
 

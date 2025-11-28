@@ -2,6 +2,7 @@ import unittest
 from pathlib import Path
 
 from internal.diff import diff_system_prompts, Colorize
+from internal.flow_config import FlowConfig
 
 
 class DiffSystemPromptsTest(unittest.TestCase):
@@ -9,28 +10,28 @@ class DiffSystemPromptsTest(unittest.TestCase):
     def test_identical_prompts_return_empty(self):
         """Test that identical prompts return an empty string."""
         prompt = "Hello\nWorld"
-        result = diff_system_prompts(prompt, prompt, Colorize.NONE)
+        result = diff_system_prompts(prompt, prompt, FlowConfig(colorize=Colorize.NONE))
         self.assertEqual(result, '')
 
     def test_additions_show_plus_lines(self):
         """Test that additions are shown with + lines."""
         prompt1 = "Hello"
         prompt2 = "Hello\nWorld"
-        result = diff_system_prompts(prompt1, prompt2, Colorize.NONE)
+        result = diff_system_prompts(prompt1, prompt2, FlowConfig(colorize=Colorize.NONE))
         self.assertIn('+World', result)
 
     def test_deletions_show_minus_lines(self):
         """Test that deletions are shown with - lines."""
         prompt1 = "Hello\nWorld"
         prompt2 = "Hello"
-        result = diff_system_prompts(prompt1, prompt2, Colorize.NONE)
+        result = diff_system_prompts(prompt1, prompt2, FlowConfig(colorize=Colorize.NONE))
         self.assertIn('-World', result)
 
     def test_modifications_show_both(self):
         """Test that modifications show both + and - lines."""
         prompt1 = "Hello\nWorld"
         prompt2 = "Hello\nPlanet"
-        result = diff_system_prompts(prompt1, prompt2, Colorize.NONE)
+        result = diff_system_prompts(prompt1, prompt2, FlowConfig(colorize=Colorize.NONE))
         self.assertIn('-World', result)
         self.assertIn('+Planet', result)
 
@@ -42,7 +43,7 @@ class DiffSystemPromptsTest(unittest.TestCase):
 
         prompt1 = prompt1_path.read_text()
         prompt2 = prompt2_path.read_text()
-        result = diff_system_prompts(prompt1, prompt2, Colorize.NONE)
+        result = diff_system_prompts(prompt1, prompt2, FlowConfig(colorize=Colorize.NONE))
         # Verify diff contains expected changes
         self.assertIn('-Platform: surprise', result)
         self.assertIn('+Platform: Neo', result)

@@ -6,9 +6,10 @@ from internal.flows import parse_flow, RequestFlow, ResponseFlow
 from datetime import datetime
 from internal.print_request import print_request
 from internal.print_response import _print_response
+from internal.flow_config import FlowConfig
 
 
-def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
+def response(raw_flow, config: FlowConfig = FlowConfig()) -> None:
     req_flow, res_flow = parse_flow(raw_flow)
     raw_request_file, raw_response_file = _write_trace(raw_flow, req_flow, res_flow)
 
@@ -17,7 +18,7 @@ def response(raw_flow, colorize: Colorize = Colorize.ALL) -> None:
         return
 
     if raw_flow.request:
-        print_request(colorize, req_flow)
+        print_request(req_flow, config)
 
     if raw_flow.response:
         _print_response(raw_flow, res_flow)

@@ -1,16 +1,17 @@
 import difflib
 
 from internal.colors import RED, GREEN, RESET, Colorize
+from internal.flow_config import FlowConfig
 
 
-def diff_system_prompts(prompt1: str, prompt2: str, colorize: Colorize = Colorize.ALL) -> str:
+def diff_system_prompts(prompt1: str, prompt2: str, config: FlowConfig) -> str:
     """Compare two system prompts and return a unified diff of the differences."""
     lines1 = prompt1.splitlines(keepends=True)
     lines2 = prompt2.splitlines(keepends=True)
 
     diff = difflib.unified_diff(lines1, lines2, fromfile='previous', tofile='current', lineterm='')
 
-    if colorize == Colorize.NONE:
+    if config.colorize == Colorize.NONE:
         return ''.join(diff)
 
     colored_lines = []
