@@ -27,9 +27,41 @@ To install it use:
 - On macOS with fish shell, run `source venv/bin/activate.fish`.
 - On Windows, run `venv\Scripts\activate.bat`.
 
+== Install Dependencies
+
+[source, shell]
+----
+pip install ".[dev]"
+----
+
+== Format
+
+[source, shell]
+----
+ruff format .
+----
+
+== Lint and Type Check
+
+[source, shell]
+----
+mypy src
+ruff check .
+----
+
+Auto-fix lint errors:
+
+[source, shell]
+----
+`ruff check . --fix`
+----
+
 == Run tests
 
-1. Run tests with `PYTHONPATH=src python -m unittest discover -s test -p "test_*.py"`.
+[source, shell]
+----
+pytest
+----
 
 == Usage
 
