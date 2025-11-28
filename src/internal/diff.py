@@ -1,6 +1,6 @@
 import difflib
 
-from internal.colors import RED, GREEN, RESET, Colorize
+from internal.colors import GREEN, RED, RESET, Colorize
 from internal.flow_config import FlowConfig
 
 

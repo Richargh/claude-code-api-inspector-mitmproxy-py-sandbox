@@ -4,7 +4,9 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from internal.colors import GRAY
 from print_agent_flows import response
+
 
 class TableFlowsTest(unittest.TestCase):
 
@@ -104,9 +106,6 @@ class TableFlowsTest(unittest.TestCase):
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             response(flow)
             output = mock_stdout.getvalue()
-
-        GRAY = "\033[90m"
-        RESET = "\033[0m"
 
         # The last non-system user text is "This line should also extract..."
         # It should NOT be preceded by GRAY

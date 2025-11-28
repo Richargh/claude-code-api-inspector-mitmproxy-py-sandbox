@@ -3,6 +3,7 @@ import unittest
 from internal.box import box_wrap
 from internal.colors import GREEN, RESET
 
+
 class TestBox(unittest.TestCase):
     def test_simple_text(self):
         self.assertEqual(box_wrap("hello", width=20), """\

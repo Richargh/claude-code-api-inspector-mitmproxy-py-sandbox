@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 
-from internal.diff import diff_system_prompts, Colorize
+from internal.diff import Colorize, diff_system_prompts
 from internal.flow_config import FlowConfig
 
 
@@ -65,7 +65,8 @@ class DiffSystemPromptsTest(unittest.TestCase):
             " \n"
             "@@ -151,7 +151,7 @@ </example>\n"
             " \n"
-            " gitStatus: This is the git status at the start of the conversation. Note that this status is a snapshot in time, and will not update during the conversation.\n"
+            " gitStatus: This is the git status at the start of the conversation."
+            " Note that this status is a snapshot in time, and will not update during the conversation.\n"
             "-Current branch: master\n"
             "+Current branch: trunk\n"
             " \n"

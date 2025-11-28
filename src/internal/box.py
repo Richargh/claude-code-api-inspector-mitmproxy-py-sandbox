@@ -1,4 +1,6 @@
 import re
+from typing import Optional
+
 from internal.colors import RESET
 
 ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
@@ -6,8 +8,8 @@ ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 def box_wrap(
     text: str,
     width: int = 100,
-    header: str = None,
-    footer: str = None,
+    header: Optional[str] = None,
+    footer: Optional[str] = None,
     top: bool = True,
     bottom: bool = True
 ) -> str:

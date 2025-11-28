@@ -2,14 +2,17 @@ import json
 from textwrap import shorten
 from typing import Union
 
+from mitmproxy import http
+
 from internal.box import box_wrap
-from internal.colors import RED, RESET, GREEN
-from internal.flows import ResponseFlow, TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock
+from internal.colors import GREEN, RED, RESET
+from internal.flows import ResponseFlow, ServerToolResultBlock, ServerToolUseBlock, TextBlock, ToolUseBlock
 
 
-def _print_response(raw_flow, res_flow: ResponseFlow):
+def _print_response(raw_flow: http.HTTPFlow, res_flow: ResponseFlow) -> None:
     if res_flow.error:
-        print(f"{RED}# Response Error:{RESET} {shorten(raw_flow.response.text, width=1000, placeholder='...')}")
+        response_text = raw_flow.response.text if raw_flow.response and raw_flow.response.text else ""
+        print(f"{RED}# Response Error:{RESET} {shorten(response_text, width=1000, placeholder='...')}")
     elif res_flow.message is not None:
         print(f"\n{GREEN}# Response{RESET}")
         print(f"model:: {res_flow.message.model}")
@@ -19,11 +22,11 @@ def _print_response(raw_flow, res_flow: ResponseFlow):
         print(f"\n{RED}# Strange Response{RESET}")
 
 
-def _print_response_block(block: Union[TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock]):
+def _print_response_block(block: Union[TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock]) -> None:
     text_content = ''
-    if block.type == 'text':
+    if isinstance(block, TextBlock):
         text_content = block.text
-    if block.type == 'tool_use':
+    elif isinstance(block, (ToolUseBlock, ServerToolUseBlock)):
         text_content = json.dumps(block.input, indent=2)
     header = block.type
     if block.type == 'tool_use' and hasattr(block, 'name'):

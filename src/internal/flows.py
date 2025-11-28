@@ -1,6 +1,9 @@
 import json
-from dataclasses import dataclass, field, asdict
-from typing import Optional, Union
+from dataclasses import asdict, dataclass, field
+from typing import Any, Optional, Union
+
+from mitmproxy import http
+
 
 @dataclass
 class RequestFlow:
@@ -42,7 +45,9 @@ class ResponseMessage:
     type: str = 'message'
     role: str = 'assistant'
     model: Optional[str] = None
-    content: list[Union['TextBlock', 'ToolUseBlock', 'ServerToolUseBlock', 'ServerToolResultBlock']] = field(default_factory=list)
+    content: list[
+        Union['TextBlock', 'ToolUseBlock', 'ServerToolUseBlock', 'ServerToolResultBlock']
+    ] = field(default_factory=list)
     stop_reason: Optional[str] = None
     stop_sequence: Optional[str] = None
     usage: Optional['Usage'] = None
@@ -81,12 +86,12 @@ class Usage:
     cache_read_input_tokens: Optional[int] = None
 
 
-def parse_flow(raw_flow) -> tuple[RequestFlow, ResponseFlow]:
+def parse_flow(raw_flow: http.HTTPFlow) -> tuple[RequestFlow, ResponseFlow]:
     """Parse an HTTP flow and return a tuple of (RequestFlow, ResponseFlow)."""
     req_flow = RequestFlow()
     res_flow = ResponseFlow()
 
-    if raw_flow.request:
+    if raw_flow.request and raw_flow.request.text:
         try:
             req = json.loads(raw_flow.request.text)
             req_flow.pretty = json.dumps(req, indent=2)
@@ -107,11 +112,17 @@ def parse_flow(raw_flow) -> tuple[RequestFlow, ResponseFlow]:
                     for item in content_list:
                         item_type = item.get('type', '')
                         if item_type == 'text':
-                            parsed_content.append(RequestMessageContent(type='text', text=item.get('text', '')))
+                            parsed_content.append(
+                                RequestMessageContent(type='text', text=item.get('text', ''))
+                            )
                         elif item_type == 'tool_use':
-                            parsed_content.append(RequestMessageContent(type='tool_use', tool_name=item.get('name', '')))
+                            parsed_content.append(
+                                RequestMessageContent(type='tool_use', tool_name=item.get('name', ''))
+                            )
                         elif item_type == 'tool_result':
-                            parsed_content.append(RequestMessageContent(type='tool_result', text=item.get('content', '')))
+                            parsed_content.append(
+                                RequestMessageContent(type='tool_result', text=item.get('content', ''))
+                            )
                 req_flow.messages.append(RequestMessage(role=role, content=parsed_content))
 
             # Parse system prompts
@@ -135,7 +146,7 @@ def parse_flow(raw_flow) -> tuple[RequestFlow, ResponseFlow]:
         except (KeyError, IndexError, TypeError) as e:
             req_flow.error = str(e)
 
-    if raw_flow.response:
+    if raw_flow.response and raw_flow.response.text:
         response_text = raw_flow.response.text
         content_type = raw_flow.response.headers.get('content-type', '')
         if 'text/event-stream' in content_type:
@@ -216,7 +227,7 @@ def _parse_sse_response(text: str) -> ResponseMessage:
     )
 
     # Finalize content blocks
-    for index in sorted(content_blocks.keys()):
+    for index in sorted(k for k in content_blocks.keys() if k is not None):
         block = content_blocks[index]
         if block['type'] == 'text':
             result.content.append(TextBlock(text=block['text']))
@@ -250,10 +261,10 @@ def _parse_sse_response(text: str) -> ResponseMessage:
     return result
 
 
-def _parse_sse(text: str) -> list[dict]:
+def _parse_sse(text: str) -> list[dict[str, Any]]:
     """Parse Server-Sent Events text into a list of event dicts."""
-    events = []
-    current_event = {}
+    events: list[dict[str, Any]] = []
+    current_event: dict[str, Any] = {}
 
     for line in text.split('\n'):
         line = line.strip()

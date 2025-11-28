@@ -2,17 +2,17 @@ from textwrap import shorten
 from typing import Optional
 
 from internal.box import box_wrap
-from internal.colors import Colorize, BLUE, RESET, GRAY
+from internal.colors import BLUE, GRAY, RESET
 from internal.diff import diff_system_prompts
 from internal.flow_config import FlowConfig
-from internal.flows import RequestFlow, RequestMessage
+from internal.flows import RequestFlow, RequestMessage, SystemPrompt
 from internal.known_prompts import known_tools, load_known_system_prompts, load_known_tool_descriptions
 
 KNOWN_TOOLS = known_tools
 known_system_prompts = load_known_system_prompts()
 known_tool_descriptions = load_known_tool_descriptions()
 
-def print_request(req_flow: RequestFlow, config: FlowConfig):
+def print_request(req_flow: RequestFlow, config: FlowConfig) -> None:
     print(f"\n{BLUE}# Request:{RESET}")
     print(f"model:: {req_flow.model}")
 
@@ -23,7 +23,7 @@ def print_request(req_flow: RequestFlow, config: FlowConfig):
 
     # Tools (unknown first in green, known in gray)
     if req_flow.tools:
-        print(f"## Tools")
+        print("## Tools")
         _print_tool_knowledge(req_flow)
 
         # Show diffs for changed tool descriptions
@@ -44,11 +44,11 @@ def print_request(req_flow: RequestFlow, config: FlowConfig):
             _print_message(message, actual_index, should_highlight)
 
 
-def _print_message(message: RequestMessage, actual_index: int, should_highlight: bool):
+def _print_message(message: RequestMessage, actual_index: int, should_highlight: bool) -> None:
     color_start = "" if should_highlight else GRAY
     color_end = "" if should_highlight else RESET
     print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
-    for content_idx, content in enumerate(message.content):
+    for content in message.content:
         if content.type == 'tool_use':
             print(
                 f"{color_start}{box_wrap('', header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
@@ -65,7 +65,7 @@ def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[
     for index, message in enumerate(all_messages):
         if message.role == 'user':
             for content in message.content:
-                if content.type == 'text' and not content.text.startswith("<system"):
+                if content.type == 'text' and content.text and not content.text.startswith("<system"):
                     most_recent_user_prompt_index = index
 
     max_message_index = len(all_messages)
@@ -78,7 +78,7 @@ def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[
     return messages_to_show, most_recent_user_prompt_index
 
 
-def _print_tool_description_diff(tool_name: str, tool_description: Optional[str], config: FlowConfig):
+def _print_tool_description_diff(tool_name: str, tool_description: Optional[str], config: FlowConfig) -> None:
     if tool_name in known_tool_descriptions and tool_description is not None:
         known_desc = known_tool_descriptions[tool_name]
         if known_desc != tool_description:
@@ -87,11 +87,11 @@ def _print_tool_description_diff(tool_name: str, tool_description: Optional[str]
                 print(box_wrap(diff, header=f"Changed Tool Description: {tool_name}"))
 
 
-def _print_system_prompt(colorize, sys_prompt):
+def _print_system_prompt(config: FlowConfig, sys_prompt: SystemPrompt) -> None:
     text_start = sys_prompt.text.split('.')[0]
     if text_start in known_system_prompts:
         known_system_prompt = known_system_prompts[text_start]
-        diff = diff_system_prompts(known_system_prompt, sys_prompt.text, colorize)
+        diff = diff_system_prompts(known_system_prompt, sys_prompt.text, config)
         if diff == '':
             print(box_wrap(f"{text_start}[...]", header="Known System Prompt"))
         else:
@@ -100,7 +100,7 @@ def _print_system_prompt(colorize, sys_prompt):
         print(box_wrap(sys_prompt.text, header="Unknown System Prompt"))
 
 
-def _print_tool_knowledge(req_flow):
+def _print_tool_knowledge(req_flow: RequestFlow) -> None:
     unknown_tools = [t for t in req_flow.tools if t not in KNOWN_TOOLS]
     known_tools = [t for t in req_flow.tools if t in KNOWN_TOOLS]
     tools_display = []
