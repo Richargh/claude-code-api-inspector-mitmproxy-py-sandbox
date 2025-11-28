@@ -6,3 +6,4 @@ from internal.colors import Colorize
 @dataclass
 class FlowConfig:
     colorize: Colorize = Colorize.ALL
+    write_trace: bool = True

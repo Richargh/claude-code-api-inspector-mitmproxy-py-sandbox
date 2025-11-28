@@ -15,7 +15,10 @@ _DEFAULT_CONFIG = FlowConfig()
 
 def response(raw_flow: http.HTTPFlow, config: FlowConfig = _DEFAULT_CONFIG) -> None:
     req_flow, res_flow = parse_flow(raw_flow)
-    raw_request_file, raw_response_file = _write_trace(raw_flow, req_flow, res_flow)
+    raw_request_file = None
+    raw_response_file = None
+    if config.write_trace:
+        raw_request_file, raw_response_file = _write_trace(raw_flow, req_flow, res_flow)
 
     if req_flow.error:
         request_text = raw_flow.request.text if raw_flow.request and raw_flow.request.text else ""
@@ -28,9 +31,10 @@ def response(raw_flow: http.HTTPFlow, config: FlowConfig = _DEFAULT_CONFIG) -> N
     if raw_flow.response:
         _print_response(raw_flow, res_flow)
 
-    print("\n# Raw Traces")
-    print(f"Written raw request to {raw_request_file}")
-    print(f"Written raw response to {raw_response_file}")
+    if raw_request_file is not None and raw_response_file is not None:
+        print("\n# Raw Traces")
+        print(f"Written raw request to {raw_request_file}")
+        print(f"Written raw response to {raw_response_file}")
 
 
 def _write_trace(raw_flow: http.HTTPFlow, req_flow: RequestFlow, res_flow: ResponseFlow) -> tuple[Path, Path]:

@@ -5,6 +5,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from internal.colors import GRAY
+from internal.flow_config import FlowConfig
 from print_agent_flows import response
 
 
@@ -15,7 +16,7 @@ class TableFlowsTest(unittest.TestCase):
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         self.assertIn("model:: claude-opus-4-5-20230415", output)
@@ -25,7 +26,7 @@ class TableFlowsTest(unittest.TestCase):
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         self.assertIn("## Messages", output)
@@ -37,7 +38,7 @@ class TableFlowsTest(unittest.TestCase):
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         # Tool names appear in box headers like "┌─tool_use Read ─"
@@ -49,7 +50,7 @@ class TableFlowsTest(unittest.TestCase):
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         self.assertIn("tool_result", output)
@@ -59,7 +60,7 @@ class TableFlowsTest(unittest.TestCase):
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         self.assertIn("## System", output)
@@ -70,7 +71,7 @@ class TableFlowsTest(unittest.TestCase):
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         self.assertIn("## Tools", output)
@@ -85,14 +86,14 @@ class TableFlowsTest(unittest.TestCase):
         flow.response = None
 
         # Should not raise an exception
-        response(flow)
+        response(flow, FlowConfig(write_trace=False))
 
     def test_shows_only_last_10_messages(self):
         """Test that only the last 10 messages are shown."""
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         # Count occurrences of "by user:" and "by assistant:" which indicate message roles
@@ -104,7 +105,7 @@ class TableFlowsTest(unittest.TestCase):
         flow = self._create_mock_flow("internal_tests/2a-request.json", {"result": "ok"})
 
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            response(flow)
+            response(flow, FlowConfig(write_trace=False))
             output = mock_stdout.getvalue()
 
         # The last non-system user text is "This line should also extract..."
