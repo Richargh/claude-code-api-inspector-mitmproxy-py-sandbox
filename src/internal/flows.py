@@ -1,26 +1,28 @@
+from __future__ import annotations
+
 import json
 from dataclasses import asdict, dataclass, field
-from typing import Any, Optional, Union
+from typing import Any
 
 from mitmproxy import http
 
 
 @dataclass
 class RequestFlow:
-    pretty: Optional[str] = None
-    model: Optional[str] = None
-    keys: Optional[list[str]] = None
-    messages: list['RequestMessage'] = field(default_factory=list)
-    system_prompts: list['SystemPrompt'] = field(default_factory=list)
+    pretty: str | None = None
+    model: str | None = None
+    keys: list[str] | None = None
+    messages: list[RequestMessage] = field(default_factory=list)
+    system_prompts: list[SystemPrompt] = field(default_factory=list)
     tools: list[str] = field(default_factory=list)
     tool_descriptions: dict[str, str] = field(default_factory=dict)
-    error: Optional[str] = None
+    error: str | None = None
 
 @dataclass
 class RequestMessage:
     role: str
     content: list[
-        Union['TextBlock', 'ToolUseBlock', 'ToolResultBlock', 'ServerToolUseBlock', 'ServerToolResultBlock']
+        TextBlock | ToolUseBlock | ToolResultBlock | ServerToolUseBlock | ServerToolResultBlock
     ] = field(default_factory=list)
 
 @dataclass
@@ -31,23 +33,23 @@ class SystemPrompt:
 
 @dataclass
 class ResponseFlow:
-    pretty: Optional[str] = None
-    error: Optional[str] = None
-    message: Optional['ResponseMessage'] = None
+    pretty: str | None = None
+    error: str | None = None
+    message: ResponseMessage | None = None
 
 @dataclass
 class ResponseMessage:
-    id: Optional[str] = None
+    id: str | None = None
     type: str = 'message'
     role: str = 'assistant'
-    model: Optional[str] = None
+    model: str | None = None
     content: list[
-        Union['TextBlock', 'ToolUseBlock', 'ServerToolUseBlock', 'ServerToolResultBlock']
+        TextBlock | ToolUseBlock | ServerToolUseBlock | ServerToolResultBlock
     ] = field(default_factory=list)
-    stop_reason: Optional[str] = None
-    stop_sequence: Optional[str] = None
-    usage: Optional['Usage'] = None
-    context_management: Optional[dict] = None
+    stop_reason: str | None = None
+    stop_sequence: str | None = None
+    usage: Usage | None = None
+    context_management: dict | None = None
 
 @dataclass
 class TextBlock:
@@ -57,35 +59,35 @@ class TextBlock:
 @dataclass
 class ToolUseBlock:
     type: str = 'tool_use'
-    id: Optional[str] = None
-    tool_name: Optional[str] = None
-    input: Optional[dict] = None
+    id: str | None = None
+    tool_name: str | None = None
+    input: dict | None = None
 
 @dataclass
 class ServerToolUseBlock:
     type: str = 'server_tool_use'
-    id: Optional[str] = None
-    tool_name: Optional[str] = None
-    input: Optional[dict] = None
+    id: str | None = None
+    tool_name: str | None = None
+    input: dict | None = None
 
 @dataclass
 class ServerToolResultBlock:
     type: str = 'server_tool_result'
-    tool_use_id: Optional[str] = None
-    content: Optional[list] = None
+    tool_use_id: str | None = None
+    content: list | None = None
 
 @dataclass
 class ToolResultBlock:
     type: str = 'tool_result'
-    tool_use_id: Optional[str] = None
-    content: Optional[str] = None
+    tool_use_id: str | None = None
+    content: str | None = None
 
 @dataclass
 class Usage:
-    input_tokens: Optional[int] = None
-    output_tokens: Optional[int] = None
-    cache_creation_input_tokens: Optional[int] = None
-    cache_read_input_tokens: Optional[int] = None
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    cache_creation_input_tokens: int | None = None
+    cache_read_input_tokens: int | None = None
 
 
 def parse_flow(raw_flow: http.HTTPFlow) -> tuple[RequestFlow, ResponseFlow]:
@@ -103,41 +105,40 @@ def parse_flow(raw_flow: http.HTTPFlow) -> tuple[RequestFlow, ResponseFlow]:
             # Parse messages
             messages = req.get('messages', [])
             for msg in messages:
-                role = msg.get('role', '')
+                message = RequestMessage(role=msg.get('role', ''), content=[])
                 content_list = msg.get('content', [])
-                parsed_content = []
                 if isinstance(content_list, str):
                     # Handle simple string content format
-                    parsed_content.append(TextBlock(text=content_list))
+                    message.content.append(TextBlock(text=content_list))
                 else:
                     # Handle list of content blocks
                     for item in content_list:
                         item_type = item.get('type', '')
                         if item_type == 'text':
-                            parsed_content.append(TextBlock(text=item.get('text', '')))
+                            message.content.append(TextBlock(text=item.get('text', '')))
                         elif item_type == 'tool_use':
-                            parsed_content.append(ToolUseBlock(
+                            message.content.append(ToolUseBlock(
                                 id=item.get('id'),
                                 tool_name=item.get('name'),
                                 input=item.get('input'),
                             ))
                         elif item_type == 'tool_result':
-                            parsed_content.append(ToolResultBlock(
+                            message.content.append(ToolResultBlock(
                                 tool_use_id=item.get('tool_use_id'),
                                 content=item.get('content'),
                             ))
                         elif item_type == 'server_tool_use':
-                            parsed_content.append(ServerToolUseBlock(
+                            message.content.append(ServerToolUseBlock(
                                 id=item.get('id'),
                                 tool_name=item.get('name'),
                                 input=item.get('input'),
                             ))
                         elif item_type == 'server_tool_result':
-                            parsed_content.append(ServerToolResultBlock(
+                            message.content.append(ServerToolResultBlock(
                                 tool_use_id=item.get('tool_use_id'),
                                 content=item.get('content'),
                             ))
-                req_flow.messages.append(RequestMessage(role=role, content=parsed_content))
+                req_flow.messages.append(message)
 
             # Parse system prompts
             system = req.get('system', [])

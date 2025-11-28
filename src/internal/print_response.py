@@ -1,6 +1,5 @@
 import json
 from textwrap import shorten
-from typing import Union
 
 from mitmproxy import http
 
@@ -22,7 +21,7 @@ def print_response(raw_flow: http.HTTPFlow, res_flow: ResponseFlow) -> None:
         print(f"\n{RED}# Strange Response{RESET}")
 
 
-def _print_response_block(block: Union[TextBlock, ToolUseBlock, ServerToolUseBlock, ServerToolResultBlock]) -> None:
+def _print_response_block(block: TextBlock | ToolUseBlock | ServerToolUseBlock | ServerToolResultBlock) -> None:
     text_content = ''
     if isinstance(block, TextBlock):
         text_content = block.text

@@ -1,13 +1,18 @@
 from textwrap import shorten
-from typing import Optional
 
 from internal.box import box_wrap
 from internal.colors import BLUE, GRAY, RESET
 from internal.diff import diff_system_prompts
 from internal.flow_config import FlowConfig
 from internal.flows import (
-    RequestFlow, RequestMessage, SystemPrompt,
-    TextBlock, ToolUseBlock, ToolResultBlock, ServerToolUseBlock, ServerToolResultBlock,
+    RequestFlow,
+    RequestMessage,
+    ServerToolResultBlock,
+    ServerToolUseBlock,
+    SystemPrompt,
+    TextBlock,
+    ToolResultBlock,
+    ToolUseBlock,
 )
 from internal.known_prompts import known_tools, load_known_system_prompts, load_known_tool_descriptions
 
@@ -70,7 +75,7 @@ def _print_message(message: RequestMessage, actual_index: int, should_highlight:
             print(f"{color_start}{box_wrap(text_preview, header=getattr(content, 'type', 'unknown'))}{color_end}")
 
 
-def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[RequestMessage], Optional[int]]:
+def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[RequestMessage], int | None]:
     most_recent_user_prompt_index = None
     for index, message in enumerate(all_messages):
         if message.role == 'user':
@@ -88,7 +93,7 @@ def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[
     return messages_to_show, most_recent_user_prompt_index
 
 
-def _print_tool_description_diff(tool_name: str, tool_description: Optional[str], config: FlowConfig) -> None:
+def _print_tool_description_diff(tool_name: str, tool_description: str | None, config: FlowConfig) -> None:
     if tool_name in known_tool_descriptions and tool_description is not None:
         known_desc = known_tool_descriptions[tool_name]
         if known_desc != tool_description:
