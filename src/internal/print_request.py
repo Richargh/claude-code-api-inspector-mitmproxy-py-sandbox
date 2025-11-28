@@ -5,7 +5,10 @@ from internal.box import box_wrap
 from internal.colors import BLUE, GRAY, RESET
 from internal.diff import diff_system_prompts
 from internal.flow_config import FlowConfig
-from internal.flows import RequestFlow, RequestMessage, SystemPrompt
+from internal.flows import (
+    RequestFlow, RequestMessage, SystemPrompt,
+    TextBlock, ToolUseBlock, ToolResultBlock, ServerToolUseBlock, ServerToolResultBlock,
+)
 from internal.known_prompts import known_tools, load_known_system_prompts, load_known_tool_descriptions
 
 KNOWN_TOOLS = known_tools
@@ -49,15 +52,22 @@ def _print_message(message: RequestMessage, actual_index: int, should_highlight:
     color_end = "" if should_highlight else RESET
     print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
     for content in message.content:
-        if content.type == 'tool_use':
+        if isinstance(content, (ToolUseBlock, ServerToolUseBlock)):
             print(
                 f"{color_start}{box_wrap('', header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
-        elif content.type == 'tool_result':
-            text_preview = shorten(content.text or '', width=200, placeholder='...')
+        elif isinstance(content, ToolResultBlock):
+            text_preview = shorten(str(content.content) if content.content else '', width=200, placeholder='...')
             print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
-        else:
+        elif isinstance(content, ServerToolResultBlock):
+            text_preview = shorten(str(content.content) if content.content else '', width=200, placeholder='...')
+            print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
+        elif isinstance(content, TextBlock):
             text_preview = shorten(content.text or '', width=200, placeholder='...')
             print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
+        else:
+            # Fallback for any other content type
+            text_preview = shorten(getattr(content, 'text', '') or '', width=200, placeholder='...')
+            print(f"{color_start}{box_wrap(text_preview, header=getattr(content, 'type', 'unknown'))}{color_end}")
 
 
 def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[RequestMessage], Optional[int]]:
@@ -65,7 +75,7 @@ def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[
     for index, message in enumerate(all_messages):
         if message.role == 'user':
             for content in message.content:
-                if content.type == 'text' and content.text and not content.text.startswith("<system"):
+                if isinstance(content, TextBlock) and content.text and not content.text.startswith("<system"):
                     most_recent_user_prompt_index = index
 
     max_message_index = len(all_messages)

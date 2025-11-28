@@ -19,13 +19,9 @@ class RequestFlow:
 @dataclass
 class RequestMessage:
     role: str
-    content: list['RequestMessageContent'] = field(default_factory=list)
-
-@dataclass
-class RequestMessageContent:
-    type: str
-    text: Optional[str] = None
-    tool_name: Optional[str] = None
+    content: list[
+        Union['TextBlock', 'ToolUseBlock', 'ToolResultBlock', 'ServerToolUseBlock', 'ServerToolResultBlock']
+    ] = field(default_factory=list)
 
 @dataclass
 class SystemPrompt:
@@ -79,6 +75,12 @@ class ServerToolResultBlock:
     content: Optional[list] = None
 
 @dataclass
+class ToolResultBlock:
+    type: str = 'tool_result'
+    tool_use_id: Optional[str] = None
+    content: Optional[str] = None
+
+@dataclass
 class Usage:
     input_tokens: Optional[int] = None
     output_tokens: Optional[int] = None
@@ -106,23 +108,35 @@ def parse_flow(raw_flow: http.HTTPFlow) -> tuple[RequestFlow, ResponseFlow]:
                 parsed_content = []
                 if isinstance(content_list, str):
                     # Handle simple string content format
-                    parsed_content.append(RequestMessageContent(type='text', text=content_list))
+                    parsed_content.append(TextBlock(text=content_list))
                 else:
                     # Handle list of content blocks
                     for item in content_list:
                         item_type = item.get('type', '')
                         if item_type == 'text':
-                            parsed_content.append(
-                                RequestMessageContent(type='text', text=item.get('text', ''))
-                            )
+                            parsed_content.append(TextBlock(text=item.get('text', '')))
                         elif item_type == 'tool_use':
-                            parsed_content.append(
-                                RequestMessageContent(type='tool_use', tool_name=item.get('name', ''))
-                            )
+                            parsed_content.append(ToolUseBlock(
+                                id=item.get('id'),
+                                tool_name=item.get('name'),
+                                input=item.get('input'),
+                            ))
                         elif item_type == 'tool_result':
-                            parsed_content.append(
-                                RequestMessageContent(type='tool_result', text=item.get('content', ''))
-                            )
+                            parsed_content.append(ToolResultBlock(
+                                tool_use_id=item.get('tool_use_id'),
+                                content=item.get('content'),
+                            ))
+                        elif item_type == 'server_tool_use':
+                            parsed_content.append(ServerToolUseBlock(
+                                id=item.get('id'),
+                                tool_name=item.get('name'),
+                                input=item.get('input'),
+                            ))
+                        elif item_type == 'server_tool_result':
+                            parsed_content.append(ServerToolResultBlock(
+                                tool_use_id=item.get('tool_use_id'),
+                                content=item.get('content'),
+                            ))
                 req_flow.messages.append(RequestMessage(role=role, content=parsed_content))
 
             # Parse system prompts
