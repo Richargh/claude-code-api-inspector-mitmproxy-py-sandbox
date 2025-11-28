@@ -2,7 +2,7 @@
 name = "claude-inspector"
 version = "0.1.0"
 description = "Inspect HTTP traffic between Claude Code and Anthropic API using mitmproxy"
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 dependencies = [
     "mitmproxy==12.2.1",
 ]
@@ -21,7 +21,7 @@ python_files = ["test_*.py"]
 python_functions = ["test_*"]
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py314"
 line-length = 120
 src = ["src", "test"]
 
@@ -37,7 +37,7 @@ select = [
 ]
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.14"
 warn_return_any = true
 warn_unused_ignores = true
 disallow_untyped_defs = true
