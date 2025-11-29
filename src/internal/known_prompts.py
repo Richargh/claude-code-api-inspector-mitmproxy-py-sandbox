@@ -41,6 +41,15 @@ def load_known_system_prompts() -> dict[str, str]:
     }
 
 
+def load_known_summary_prompt() -> tuple[str, str]:
+    """Load the summary prompt and return (first_sentence, full_text)."""
+    internal_dir = Path(__file__).parent
+    summary_prompt_path = internal_dir / 'summary-prompt.md'
+    summary_prompt = summary_prompt_path.read_text()
+    summary_prompt_start = summary_prompt.split('.')[0]
+    return summary_prompt_start, summary_prompt
+
+
 def load_known_tool_descriptions() -> dict[str, str]:
     internal_dir = Path(__file__).parent
     descriptions = {}

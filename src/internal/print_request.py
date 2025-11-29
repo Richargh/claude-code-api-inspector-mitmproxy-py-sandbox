@@ -14,12 +14,18 @@ from internal.flows import (
     ToolResultBlock,
     ToolUseBlock,
 )
-from internal.known_prompts import known_tools, load_known_system_prompts, load_known_tool_descriptions
+from internal.known_prompts import (
+    known_tools,
+    load_known_summary_prompt,
+    load_known_system_prompts,
+    load_known_tool_descriptions,
+)
 from internal.shorten_dict import shorten_dict
 
 KNOWN_TOOLS = known_tools
 known_system_prompts = load_known_system_prompts()
 known_tool_descriptions = load_known_tool_descriptions()
+summary_prompt_start, known_summary_prompt = load_known_summary_prompt()
 
 def print_request(req_flow: RequestFlow, config: FlowConfig) -> None:
     print(f"\n{BLUE}# Request:{RESET}")
@@ -50,10 +56,10 @@ def print_request(req_flow: RequestFlow, config: FlowConfig) -> None:
         for index, message in enumerate(messages_to_show):
             actual_index = start_message_index + index
             should_highlight = most_recent_user_prompt_index == actual_index
-            _print_message(message, actual_index, should_highlight)
+            _print_message(message, actual_index, should_highlight, config)
 
 
-def _print_message(message: RequestMessage, actual_index: int, should_highlight: bool) -> None:
+def _print_message(message: RequestMessage, actual_index: int, should_highlight: bool, config: FlowConfig) -> None:
     color_start = "" if should_highlight else GRAY
     color_end = "" if should_highlight else RESET
     print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
@@ -69,8 +75,12 @@ def _print_message(message: RequestMessage, actual_index: int, should_highlight:
             text_preview = shorten(str(content.content) if content.content else '', width=200, placeholder='...')
             print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
         elif isinstance(content, TextBlock):
-            text_preview = shorten(content.text or '', width=200, placeholder='...')
-            print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
+            text_start = (content.text or '').split('.')[0]
+            if text_start == summary_prompt_start:
+                _print_summary_prompt(content.text, config)
+            else:
+                text_preview = shorten(content.text or '', width=200, placeholder='...')
+                print(f"{color_start}{box_wrap(text_preview, header=content.type)}{color_end}")
         else:
             # Fallback for any other content type
             text_preview = shorten(getattr(content, 'text', '') or '', width=200, placeholder='...')
@@ -115,6 +125,16 @@ def _print_system_prompt(config: FlowConfig, sys_prompt: SystemPrompt) -> None:
             print(box_wrap(f"{text_start}[...]\n\n{diff}", header="Changed System Prompt"))
     else:
         print(box_wrap(sys_prompt.text, header="Unknown System Prompt"))
+
+
+def _print_summary_prompt(text: str, config: FlowConfig) -> None:
+    """Print a known summary prompt with diff if changed."""
+    text_start = text.split('.')[0]
+    diff = diff_system_prompts(known_summary_prompt, text, config)
+    if diff == '':
+        print(box_wrap(f"{text_start}[...]", header="summary prompt"))
+    else:
+        print(box_wrap(f"{text_start}[...]\n\n{diff}", header="summary prompt (changed)"))
 
 
 def _print_tool_knowledge(req_flow: RequestFlow) -> None:
