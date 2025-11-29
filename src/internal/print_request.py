@@ -60,8 +60,8 @@ def _print_message(message: RequestMessage, actual_index: int, should_highlight:
     for content in message.content:
         if isinstance(content, (ToolUseBlock, ServerToolUseBlock)):
             input_preview = shorten(json.dumps(content.input) if content.input else '', width=200, placeholder='...')
-            print(
-                f"{color_start}{box_wrap(input_preview, header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
+            header = f'{content.type} {content.tool_name} '
+            print(f"{color_start}{box_wrap(input_preview, header=header, bottom=False)}{color_end}")
         elif isinstance(content, ToolResultBlock):
             text_preview = shorten(str(content.content) if content.content else '', width=200, placeholder='...')
             print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
