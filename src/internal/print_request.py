@@ -1,3 +1,4 @@
+import json
 from textwrap import shorten
 
 from internal.box import box_wrap
@@ -58,8 +59,9 @@ def _print_message(message: RequestMessage, actual_index: int, should_highlight:
     print(f"{color_start}Msg {actual_index} by {message.role}:{color_end}")
     for content in message.content:
         if isinstance(content, (ToolUseBlock, ServerToolUseBlock)):
+            input_preview = shorten(json.dumps(content.input) if content.input else '', width=200, placeholder='...')
             print(
-                f"{color_start}{box_wrap('', header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
+                f"{color_start}{box_wrap(input_preview, header=f'{content.type} {content.tool_name} ', bottom=False)}{color_end}")
         elif isinstance(content, ToolResultBlock):
             text_preview = shorten(str(content.content) if content.content else '', width=200, placeholder='...')
             print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
