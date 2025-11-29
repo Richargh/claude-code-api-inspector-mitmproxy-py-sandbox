@@ -96,184 +96,228 @@ def parse_flow(raw_flow: http.HTTPFlow) -> tuple[RequestFlow, ResponseFlow]:
     res_flow = ResponseFlow()
 
     if raw_flow.request and raw_flow.request.text:
-        try:
-            req = json.loads(raw_flow.request.text)
-            req_flow.pretty = json.dumps(req, indent=2)
-            req_flow.keys = list(req.keys())
-            req_flow.model = req.get('model')
-
-            # Parse messages
-            messages = req.get('messages', [])
-            for msg in messages:
-                message = RequestMessage(role=msg.get('role', ''), content=[])
-                content_list = msg.get('content', [])
-                if isinstance(content_list, str):
-                    # Handle simple string content format
-                    message.content.append(TextBlock(text=content_list))
-                else:
-                    # Handle list of content blocks
-                    for item in content_list:
-                        item_type = item.get('type', '')
-                        if item_type == 'text':
-                            message.content.append(TextBlock(text=item.get('text', '')))
-                        elif item_type == 'tool_use':
-                            message.content.append(ToolUseBlock(
-                                id=item.get('id'),
-                                tool_name=item.get('name'),
-                                input=item.get('input'),
-                            ))
-                        elif item_type == 'tool_result':
-                            message.content.append(ToolResultBlock(
-                                tool_use_id=item.get('tool_use_id'),
-                                content=item.get('content'),
-                            ))
-                        elif item_type == 'server_tool_use':
-                            message.content.append(ServerToolUseBlock(
-                                id=item.get('id'),
-                                tool_name=item.get('name'),
-                                input=item.get('input'),
-                            ))
-                        elif item_type == 'server_tool_result':
-                            message.content.append(ServerToolResultBlock(
-                                tool_use_id=item.get('tool_use_id'),
-                                content=item.get('content'),
-                            ))
-                req_flow.messages.append(message)
-
-            # Parse system prompts
-            system = req.get('system', [])
-            for sys_item in system:
-                text = sys_item.get('text', '')
-                req_flow.system_prompts.append(SystemPrompt(text=text))
-
-            # Parse tools
-            tools = req.get('tools', [])
-            for tool in tools:
-                name = tool.get('name', '')
-                if name:
-                    req_flow.tools.append(name)
-                    description = tool.get('description', '')
-                    if description:
-                        req_flow.tool_descriptions[name] = description
-
-        except json.JSONDecodeError as e:
-            req_flow.error = str(e)
-        except (KeyError, IndexError, TypeError) as e:
-            req_flow.error = str(e)
+        _parse_request(req_flow, raw_flow.request.text)
 
     if raw_flow.response and raw_flow.response.text:
-        response_text = raw_flow.response.text
-        content_type = raw_flow.response.headers.get('content-type', '')
-        if 'text/event-stream' in content_type:
-            try:
-                sse_data = _parse_sse_response(response_text)
-                res_flow.pretty = json.dumps(asdict(sse_data), indent=2) + "\n" + response_text
-                res_flow.message = sse_data
-            except Exception as e:
-                res_flow.error = str(e)
-        else:
-            try:
-                json.loads(response_text)
-            except json.JSONDecodeError as e:
-                res_flow.error = str(e)
+        _parse_response(res_flow, raw_flow.response.text, raw_flow.response.headers.get('content-type', ''))
 
-    return (req_flow, res_flow)
+    return req_flow, res_flow
+
+
+def _parse_request(req_flow: RequestFlow, request_text: str) -> None:
+    """Parse request JSON and populate req_flow."""
+    try:
+        req = json.loads(request_text)
+        req_flow.pretty = json.dumps(req, indent=2)
+        req_flow.keys = list(req.keys())
+        req_flow.model = req.get('model')
+        req_flow.messages = _parse_messages(req.get('messages', []))
+        req_flow.system_prompts = _parse_system_prompts(req.get('system', []))
+        _parse_tools(req_flow, req.get('tools', []))
+    except json.JSONDecodeError as e:
+        req_flow.error = str(e)
+    except (KeyError, IndexError, TypeError) as e:
+        req_flow.error = str(e)
+
+
+def _parse_response(res_flow: ResponseFlow, response_text: str, content_type: str) -> None:
+    """Parse response and populate res_flow."""
+    if 'text/event-stream' in content_type:
+        try:
+            sse_data = _parse_sse_response(response_text)
+            res_flow.pretty = json.dumps(asdict(sse_data), indent=2) + "\n" + response_text
+            res_flow.message = sse_data
+        except Exception as e:
+            res_flow.error = str(e)
+    else:
+        try:
+            json.loads(response_text)
+        except json.JSONDecodeError as e:
+            res_flow.error = str(e)
+
+
+def _parse_messages(messages: list[dict]) -> list[RequestMessage]:
+    """Parse raw message dicts into RequestMessage objects."""
+    return [
+        RequestMessage(
+            role=msg.get('role', ''),
+            content=_parse_content_list(msg.get('content', [])))
+        for msg in messages
+    ]
+
+
+def _parse_content_list(content_list: str | list) -> list:
+    """Parse content into a list of typed blocks."""
+    if isinstance(content_list, str):
+        return [TextBlock(text=content_list)]
+    return [_parse_content_block(item) for item in content_list]
+
+
+def _parse_content_block(
+    item: dict,
+) -> TextBlock | ToolUseBlock | ToolResultBlock | ServerToolUseBlock | ServerToolResultBlock:
+    """Create a content block from a dict."""
+    block_type = item.get('type', '')
+    if block_type == 'text':
+        return TextBlock(text=item.get('text', ''))
+    if block_type == 'tool_use':
+        return ToolUseBlock(
+            id=item.get('id'),
+            tool_name=item.get('name'),
+            input=item.get('input'))
+    if block_type == 'tool_result':
+        return ToolResultBlock(
+            tool_use_id=item.get('tool_use_id'),
+            content=item.get('content'))
+    if block_type == 'server_tool_use':
+        return ServerToolUseBlock(
+            id=item.get('id'),
+            tool_name=item.get('name'),
+            input=item.get('input'))
+    if block_type == 'server_tool_result':
+        return ServerToolResultBlock(
+            tool_use_id=item.get('tool_use_id'),
+            content=item.get('content'))
+    return TextBlock()
+
+
+def _parse_system_prompts(system: list[dict]) -> list[SystemPrompt]:
+    """Parse system prompt dicts into SystemPrompt objects."""
+    return [SystemPrompt(text=s.get('text', '')) for s in system]
+
+
+def _parse_tools(req_flow: RequestFlow, tools: list[dict]) -> None:
+    """Parse tools and populate req_flow.tools and req_flow.tool_descriptions."""
+    for tool in tools:
+        name = tool.get('name', '')
+        if name:
+            req_flow.tools.append(name)
+            if desc := tool.get('description', ''):
+                req_flow.tool_descriptions[name] = desc
 
 
 def _parse_sse_response(text: str) -> ResponseMessage:
     """Parse SSE response and reconstruct full message with all content blocks."""
     events = _parse_sse(text)
-
     result = ResponseMessage()
-    usage_data = {}
-    content_blocks = {}  # Track blocks by index
+    usage_data: dict = {}
+    content_blocks: dict = {}
 
     for event in events:
         data = event.get('data', {})
         if not isinstance(data, dict):
             continue
-
         event_type = data.get('type')
-
         if event_type == 'message_start':
-            message = data.get('message', {})
-            result.id = message.get('id')
-            result.model = message.get('model')
-            result.role = message.get('role', 'assistant')
-            usage_data = message.get('usage', {})
-
+            _handle_message_start(result, usage_data, data)
         elif event_type == 'content_block_start':
-            index = data.get('index')
-            block = data.get('content_block', {})
-            block_type = block.get('type')
-            content_blocks[index] = {
-                'type': block_type,
-                'text': '' if block_type == 'text' else None,
-                'id': block.get('id'),
-                'name': block.get('name'),
-                'input': '' if block_type in ('tool_use', 'server_tool_use') else None,
-                'tool_use_id': block.get('tool_use_id'),
-                'content': block.get('content'),
-            }
-
+            _handle_content_block_start(content_blocks, data)
         elif event_type == 'content_block_delta':
-            index = data.get('index')
-            delta = data.get('delta', {})
-            if index in content_blocks:
-                if delta.get('type') == 'text_delta':
-                    content_blocks[index]['text'] += delta.get('text', '')
-                elif delta.get('type') == 'input_json_delta':
-                    content_blocks[index]['input'] += delta.get('partial_json', '')
-
+            _handle_content_block_delta(content_blocks, data)
         elif event_type == 'message_delta':
-            delta = data.get('delta', {})
-            result.stop_reason = delta.get('stop_reason')
-            result.stop_sequence = delta.get('stop_sequence')
-            usage_data.update(data.get('usage', {}))
-            if 'context_management' in data:
-                result.context_management = data['context_management']
+            _handle_message_delta(result, usage_data, data)
 
-    # Create Usage dataclass
-    result.usage = Usage(
+    result.usage = _create_usage(usage_data)
+    result.content = _finalize_content_blocks(content_blocks)
+    return result
+
+
+def _handle_message_start(result: ResponseMessage, usage_data: dict, data: dict) -> None:
+    """Handle message_start SSE event."""
+    message = data.get('message', {})
+    result.id = message.get('id')
+    result.model = message.get('model')
+    result.role = message.get('role', 'assistant')
+    usage_data.update(message.get('usage', {}))
+
+
+def _handle_content_block_start(content_blocks: dict, data: dict) -> None:
+    """Handle content_block_start SSE event."""
+    index = data.get('index')
+    block = data.get('content_block', {})
+    block_type = block.get('type')
+    content_blocks[index] = {
+        'type': block_type,
+        'text': '' if block_type == 'text' else None,
+        'id': block.get('id'),
+        'name': block.get('name'),
+        'input': '' if block_type in ('tool_use', 'server_tool_use') else None,
+        'tool_use_id': block.get('tool_use_id'),
+        'content': block.get('content'),
+    }
+
+
+def _handle_content_block_delta(content_blocks: dict, data: dict) -> None:
+    """Handle content_block_delta SSE event."""
+    index = data.get('index')
+    delta = data.get('delta', {})
+    if index not in content_blocks:
+        return
+    if delta.get('type') == 'text_delta':
+        content_blocks[index]['text'] += delta.get('text', '')
+    elif delta.get('type') == 'input_json_delta':
+        content_blocks[index]['input'] += delta.get('partial_json', '')
+
+
+def _handle_message_delta(result: ResponseMessage, usage_data: dict, data: dict) -> None:
+    """Handle message_delta SSE event."""
+    delta = data.get('delta', {})
+    result.stop_reason = delta.get('stop_reason')
+    result.stop_sequence = delta.get('stop_sequence')
+    usage_data.update(data.get('usage', {}))
+    if 'context_management' in data:
+        result.context_management = data['context_management']
+
+
+def _create_usage(usage_data: dict) -> Usage:
+    """Create Usage dataclass from usage data dict."""
+    return Usage(
         input_tokens=usage_data.get('input_tokens'),
         output_tokens=usage_data.get('output_tokens'),
         cache_creation_input_tokens=usage_data.get('cache_creation_input_tokens'),
         cache_read_input_tokens=usage_data.get('cache_read_input_tokens'),
     )
 
-    # Finalize content blocks
-    for index in sorted(k for k in content_blocks.keys() if k is not None):
-        block = content_blocks[index]
-        if block['type'] == 'text':
-            result.content.append(TextBlock(text=block['text']))
-        elif block['type'] == 'tool_use':
-            try:
-                input_data = json.loads(block['input']) if block['input'] else {}
-            except json.JSONDecodeError:
-                input_data = block['input']
-            result.content.append(ToolUseBlock(
-                id=block['id'],
-                tool_name=block['name'],
-                input=input_data,
-            ))
-        elif block['type'] == 'server_tool_use':
-            try:
-                input_data = json.loads(block['input']) if block['input'] else {}
-            except json.JSONDecodeError:
-                input_data = block['input']
-            result.content.append(ServerToolUseBlock(
-                id=block['id'],
-                tool_name=block['name'],
-                input=input_data,
-            ))
-        elif block['type'] == 'web_search_tool_result':
-            result.content.append(ServerToolResultBlock(
-                type='web_search_tool_result',
-                tool_use_id=block['tool_use_id'],
-                content=block['content'],
-            ))
 
+def _finalize_content_blocks(content_blocks: dict) -> list:
+    """Convert accumulated block data into typed block objects."""
+    result = []
+    for index in sorted(k for k in content_blocks if k is not None):
+        block = content_blocks[index]
+        result.append(_finalize_block(block))
     return result
+
+
+def _finalize_block(block: dict) -> TextBlock | ToolUseBlock | ServerToolUseBlock | ServerToolResultBlock:
+    """Convert a single accumulated block dict into a typed block object."""
+    block_type = block['type']
+    if block_type == 'text':
+        return TextBlock(text=block['text'])
+    if block_type in ('tool_use', 'server_tool_use'):
+        input_data = _parse_json_input(block['input'])
+        cls = ToolUseBlock if block_type == 'tool_use' else ServerToolUseBlock
+        return cls(
+            id=block['id'],
+            tool_name=block['name'],
+            input=input_data)
+    if block_type == 'web_search_tool_result':
+        return ServerToolResultBlock(
+            type='web_search_tool_result',
+            tool_use_id=block['tool_use_id'],
+            content=block['content']
+        )
+    return TextBlock()
+
+
+def _parse_json_input(input_str: str | None) -> dict[str, Any] | None:
+    """Parse JSON input string, returning empty dict on failure."""
+    if not input_str:
+        return {}
+    try:
+        result: dict[str, Any] = json.loads(input_str)
+        return result
+    except json.JSONDecodeError:
+        return {}
 
 
 def _parse_sse(text: str) -> list[dict[str, Any]]:
