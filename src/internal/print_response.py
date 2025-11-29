@@ -28,6 +28,6 @@ def _print_response_block(block: TextBlock | ToolUseBlock | ServerToolUseBlock |
     elif isinstance(block, (ToolUseBlock, ServerToolUseBlock)):
         text_content = json.dumps(block.input, indent=2)
     header = block.type
-    if block.type == 'tool_use' and hasattr(block, 'name'):
-        header = f"{block.type} {block.name}"
+    if isinstance(block, (ToolUseBlock, ServerToolUseBlock)) and block.tool_name:
+        header = f"{block.type} {block.tool_name}"
     print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
