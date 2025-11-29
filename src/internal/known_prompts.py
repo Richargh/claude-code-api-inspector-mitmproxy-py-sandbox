@@ -22,6 +22,8 @@ known_tools = {
     "SlashCommand"
 }
 
+summary_result_start = ("This session is being continued from a previous conversation that ran out of context."
+                        " The conversation is summarized below:")
 
 def load_known_system_prompts() -> dict[str, str]:
     internal_dir = Path(__file__).parent

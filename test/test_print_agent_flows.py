@@ -4,7 +4,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from internal.colors import GRAY
+from internal.colors import GRAY, BLUE, RESET
 from internal.flow_config import FlowConfig
 from print_agent_flows import response
 
@@ -117,6 +117,38 @@ class TableFlowsTest(unittest.TestCase):
         # Other user texts like "Where is x?" should be in GRAY
         self.assertIn(f"{GRAY}┌─text", output)
 
+    def test_detects_conversation_summary(self):
+        """Test that auto-generated conversation summaries are detected and displayed with special header."""
+
+        # Create a request with a conversation summary in a user message
+        request_data = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text":
+                                "This session is being continued from a previous conversation that ran out of context."
+                                " The conversation is summarized below:"
+                                "\n\nAnalysis:\n[summary content here]"
+                        }
+                    ]
+                }
+            ]
+        }
+
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.url = "http://localhost:3000"
+        flow.request.text = json.dumps(request_data)
+        flow.response = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn(f"┌─{BLUE}conversation summary{RESET}──────────────────────────", output)
 
     def _create_mock_flow(self, request_file, response_data=None):
         """Helper to create a mock mitmproxy HTTPFlow."""
@@ -136,6 +168,7 @@ class TableFlowsTest(unittest.TestCase):
             flow.response = None
 
         return flow
+
 
 if __name__ == '__main__':
     unittest.main()

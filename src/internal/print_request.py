@@ -19,6 +19,7 @@ from internal.known_prompts import (
     load_known_summary_prompt,
     load_known_system_prompts,
     load_known_tool_descriptions,
+    summary_result_start,
 )
 from internal.shorten_dict import shorten_dict
 
@@ -26,6 +27,8 @@ KNOWN_TOOLS = known_tools
 known_system_prompts = load_known_system_prompts()
 known_tool_descriptions = load_known_tool_descriptions()
 summary_prompt_start, known_summary_prompt = load_known_summary_prompt()
+# Extract first sentence from summary_result_start for matching
+summary_result_first_sentence = summary_result_start.split('.')[0]
 
 def print_request(req_flow: RequestFlow, config: FlowConfig) -> None:
     print(f"\n{BLUE}# Request:{RESET}")
@@ -76,7 +79,9 @@ def _print_message(message: RequestMessage, actual_index: int, should_highlight:
             print(f"{color_start}{box_wrap(text_preview, footer=content.type, top=False)}{color_end}")
         elif isinstance(content, TextBlock):
             text_start = (content.text or '').split('.')[0]
-            if text_start == summary_prompt_start:
+            if text_start == summary_result_first_sentence:
+                _print_summary_result(content.text)
+            elif text_start == summary_prompt_start:
                 _print_summary_prompt(content.text, config)
             else:
                 text_preview = shorten(content.text or '', width=200, placeholder='...')
@@ -132,9 +137,15 @@ def _print_summary_prompt(text: str, config: FlowConfig) -> None:
     text_start = text.split('.')[0]
     diff = diff_system_prompts(known_summary_prompt, text, config)
     if diff == '':
-        print(box_wrap(f"{text_start}[...]", header="summary prompt"))
+        print(box_wrap(f"{text_start}[...]", header=f"{BLUE}summary prompt{RESET}"))
     else:
         print(box_wrap(f"{text_start}[...]\n\n{diff}", header="summary prompt (changed)"))
+
+
+def _print_summary_result(text: str) -> None:
+    """Print an auto-generated conversation summary (truncated)."""
+    text_preview = shorten(text, width=200, placeholder='...')
+    print(box_wrap(text_preview, header=f"{BLUE}conversation summary{RESET}"))
 
 
 def _print_tool_knowledge(req_flow: RequestFlow) -> None:
