@@ -1,4 +1,3 @@
-import json
 from textwrap import shorten
 
 from mitmproxy import http
@@ -6,6 +5,7 @@ from mitmproxy import http
 from internal.box import box_wrap
 from internal.colors import GREEN, RED, RESET
 from internal.flows import ResponseFlow, ServerToolResultBlock, ServerToolUseBlock, TextBlock, ToolUseBlock
+from internal.shorten_dict import shorten_dict
 
 
 def print_response(raw_flow: http.HTTPFlow, res_flow: ResponseFlow) -> None:
@@ -24,10 +24,10 @@ def print_response(raw_flow: http.HTTPFlow, res_flow: ResponseFlow) -> None:
 def _print_response_block(block: TextBlock | ToolUseBlock | ServerToolUseBlock | ServerToolResultBlock) -> None:
     text_content = ''
     if isinstance(block, TextBlock):
-        text_content = block.text
+        text_content = shorten(block.text, width=500, placeholder="...")
     elif isinstance(block, (ToolUseBlock, ServerToolUseBlock)):
-        text_content = json.dumps(block.input, indent=2)
+        text_content = shorten_dict(block.input)
     header = block.type
     if isinstance(block, (ToolUseBlock, ServerToolUseBlock)) and block.tool_name:
         header = f"{block.type} {block.tool_name}"
-    print(box_wrap(shorten(text_content, width=500, placeholder="..."), header=header))
+    print(box_wrap(text_content, header=header))
