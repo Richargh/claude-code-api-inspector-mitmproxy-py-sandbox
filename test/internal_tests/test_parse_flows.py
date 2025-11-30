@@ -246,5 +246,120 @@ class TestParseFlowWithSSE(unittest.TestCase):
         return flow
 
 
+class TestParseFlowWithNonSSEResponse(unittest.TestCase):
+    """Test parsing of non-SSE (regular JSON) responses.
+
+    When Claude API responses are not streamed, they return as plain JSON
+    (content-type: application/json) rather than SSE (text/event-stream).
+    These responses should be parsed and populate res_flow.message.
+    """
+
+    def test_parse_flow_with_non_sse_json_response_populates_message(self):
+        """Test that non-SSE JSON response populates res_flow.message.
+
+        This is a regression test for the bug where non-SSE responses were
+        only validated as JSON but not actually parsed into ResponseMessage.
+        """
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps({"model": "test", "messages": []})
+
+        # This is a typical non-streaming response from Claude API
+        non_sse_response = {
+            "model": "claude-opus-4-5-20251101",
+            "id": "msg_01JiK8D9XKhnJD9bQZeQsXNA",
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "text", "text": "Hello, world!"}],
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "cache_creation_input_tokens": 0,
+                "cache_read_input_tokens": 0
+            }
+        }
+        flow.response = MagicMock()
+        flow.response.text = json.dumps(non_sse_response)
+        flow.response.headers = {'content-type': 'application/json'}
+
+        req_flow, res_flow = parse_flow(flow)
+
+        # Currently fails: res_flow.message is None for non-SSE responses
+        self.assertIsNotNone(res_flow.message)
+        self.assertEqual(res_flow.message.id, "msg_01JiK8D9XKhnJD9bQZeQsXNA")
+        self.assertEqual(res_flow.message.model, "claude-opus-4-5-20251101")
+        self.assertEqual(res_flow.message.role, "assistant")
+        self.assertEqual(res_flow.message.stop_reason, "end_turn")
+        self.assertEqual(len(res_flow.message.content), 1)
+        self.assertEqual(res_flow.message.content[0].text, "Hello, world!")
+        self.assertEqual(res_flow.message.usage.input_tokens, 100)
+        self.assertEqual(res_flow.message.usage.output_tokens, 50)
+
+    def test_parse_flow_with_non_sse_json_response_sets_pretty(self):
+        """Test that non-SSE JSON response sets res_flow.pretty."""
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps({"model": "test", "messages": []})
+
+        non_sse_response = {
+            "model": "claude-sonnet-4-20250514",
+            "id": "msg_test123",
+            "type": "message",
+            "role": "assistant",
+            "content": [{"type": "text", "text": "Test response"}],
+            "stop_reason": "end_turn",
+            "stop_sequence": None,
+            "usage": {"input_tokens": 10, "output_tokens": 5}
+        }
+        flow.response = MagicMock()
+        flow.response.text = json.dumps(non_sse_response)
+        flow.response.headers = {'content-type': 'application/json'}
+
+        req_flow, res_flow = parse_flow(flow)
+
+        # Currently fails: res_flow.pretty is None for non-SSE responses
+        self.assertIsNotNone(res_flow.pretty)
+
+    def test_parse_flow_with_non_sse_tool_use_response(self):
+        """Test that non-SSE response with tool_use is parsed correctly."""
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps({"model": "test", "messages": []})
+
+        non_sse_response = {
+            "model": "claude-opus-4-5-20251101",
+            "id": "msg_tool_test",
+            "type": "message",
+            "role": "assistant",
+            "content": [
+                {"type": "text", "text": "Let me search for that."},
+                {
+                    "type": "tool_use",
+                    "id": "toolu_123",
+                    "name": "Grep",
+                    "input": {"pattern": "TODO", "path": "/src"}
+                }
+            ],
+            "stop_reason": "tool_use",
+            "stop_sequence": None,
+            "usage": {"input_tokens": 200, "output_tokens": 100}
+        }
+        flow.response = MagicMock()
+        flow.response.text = json.dumps(non_sse_response)
+        flow.response.headers = {'content-type': 'application/json'}
+
+        req_flow, res_flow = parse_flow(flow)
+
+        # Currently fails: res_flow.message is None for non-SSE responses
+        self.assertIsNotNone(res_flow.message)
+        self.assertEqual(res_flow.message.stop_reason, "tool_use")
+        self.assertEqual(len(res_flow.message.content), 2)
+        self.assertEqual(res_flow.message.content[0].type, "text")
+        self.assertEqual(res_flow.message.content[1].type, "tool_use")
+        self.assertEqual(res_flow.message.content[1].tool_name, "Grep")
+
+
 if __name__ == '__main__':
     unittest.main()

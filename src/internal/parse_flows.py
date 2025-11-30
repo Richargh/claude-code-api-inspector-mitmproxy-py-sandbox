@@ -139,9 +139,51 @@ def _parse_response(res_flow: ResponseFlow, response_text: str, content_type: st
             res_flow.error = str(e)
     else:
         try:
-            json.loads(response_text)
+            data = json.loads(response_text)
+            res_flow.pretty = json.dumps(data, indent=2)
+            res_flow.message = _parse_json_response(data)
         except json.JSONDecodeError as e:
             res_flow.error = str(e)
+
+
+def _parse_json_response(data: dict) -> ResponseMessage:
+    """Parse a non-SSE JSON response into a ResponseMessage."""
+    usage_data = data.get('usage', {})
+    return ResponseMessage(
+        id=data.get('id'),
+        type=data.get('type', 'message'),
+        role=data.get('role', 'assistant'),
+        model=data.get('model'),
+        content=[_parse_response_content_block(block) for block in data.get('content', [])],
+        stop_reason=data.get('stop_reason'),
+        stop_sequence=data.get('stop_sequence'),
+        usage=_create_usage(usage_data),
+        context_management=data.get('context_management'),
+    )
+
+
+def _parse_response_content_block(
+        item: dict,
+) -> TextBlock | ToolUseBlock | ServerToolUseBlock | ServerToolResultBlock:
+    """Parse a response content block from JSON."""
+    block_type = item.get('type', '')
+    if block_type == 'text':
+        return TextBlock(text=item.get('text', ''))
+    if block_type == 'tool_use':
+        return ToolUseBlock(
+            id=item.get('id'),
+            tool_name=item.get('name'),
+            input=item.get('input'))
+    if block_type == 'server_tool_use':
+        return ServerToolUseBlock(
+            id=item.get('id'),
+            tool_name=item.get('name'),
+            input=item.get('input'))
+    if block_type == 'server_tool_result':
+        return ServerToolResultBlock(
+            tool_use_id=item.get('tool_use_id'),
+            content=item.get('content'))
+    return TextBlock()
 
 
 def _parse_messages(messages: list[dict]) -> list[RequestMessage]:
