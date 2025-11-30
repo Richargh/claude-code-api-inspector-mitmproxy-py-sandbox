@@ -1,7 +1,7 @@
 import re
 from pathlib import Path
 
-known_tools = {
+all_known_tools = {
     "Bash",
     "BashOutput",
     "Glob",
@@ -55,7 +55,7 @@ def load_known_summary_prompt() -> tuple[str, str]:
 def load_known_tool_descriptions() -> dict[str, str]:
     internal_dir = Path(__file__).parent
     descriptions = {}
-    for tool_name in known_tools:
+    for tool_name in all_known_tools:
         filename = _tool_name_to_filename(tool_name)
         filepath = internal_dir / filename
         if filepath.exists():

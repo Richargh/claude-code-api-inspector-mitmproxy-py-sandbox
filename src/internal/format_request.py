@@ -16,7 +16,7 @@ from internal.parse_flows import (
     ToolUseBlock,
 )
 from internal.known_prompts import (
-    known_tools,
+    all_known_tools,
     load_known_summary_prompt,
     load_known_system_prompts,
     load_known_tool_descriptions,
@@ -24,7 +24,7 @@ from internal.known_prompts import (
 )
 from internal.shorten_dict import shorten_dict
 
-KNOWN_TOOLS = known_tools
+KNOWN_TOOLS = all_known_tools
 known_system_prompts = load_known_system_prompts()
 known_tool_descriptions = load_known_tool_descriptions()
 summary_prompt_start, known_summary_prompt = load_known_summary_prompt()
