@@ -5,8 +5,8 @@ from mitmproxy import http
 
 from internal.flow_config import FlowConfig
 from internal.flows import RequestFlow, ResponseFlow, parse_flow
-from internal.print_request import print_request
-from internal.print_response import print_response
+from internal.format_request import format_request
+from internal.format_response import format_response
 
 _DEFAULT_CONFIG = FlowConfig()
 
@@ -19,10 +19,10 @@ def response(raw_flow: http.HTTPFlow, config: FlowConfig = _DEFAULT_CONFIG) -> N
         raw_request_file, raw_response_file = _write_trace(raw_flow, req_flow, res_flow)
 
     if raw_flow.request:
-        print_request(raw_flow, req_flow, config)
+        print(format_request(raw_flow, req_flow, config))
 
     if raw_flow.response:
-        print_response(raw_flow, res_flow)
+        print(format_response(raw_flow, res_flow))
 
     if raw_request_file is not None and raw_response_file is not None:
         print("\n# Raw Traces")
