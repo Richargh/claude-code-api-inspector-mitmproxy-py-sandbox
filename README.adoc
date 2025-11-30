@@ -27,21 +27,21 @@ To install it use:
 - On macOS with fish shell, run `source venv/bin/activate.fish`.
 - On Windows, run `venv\Scripts\activate.bat`.
 
-== Install Dependencies
+=== Install Dependencies
 
 [source, shell]
 ----
 pip install ".[dev]"
 ----
 
-== Format
+=== Format
 
 [source, shell]
 ----
 ruff format .
 ----
 
-== Lint and Type Check
+=== Lint and Type Check
 
 [source, shell]
 ----
@@ -56,14 +56,14 @@ Auto-fix lint errors:
 `ruff check . --fix`
 ----
 
-== Run tests
+=== Run tests
 
 [source, shell]
 ----
 pytest
 ----
 
-== Run tests, see missing coverage
+=== Run tests, see missing coverage
 
 [source, shell]
 ----
