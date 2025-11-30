@@ -150,6 +150,39 @@ class TableFlowsTest(unittest.TestCase):
 
         self.assertIn(f"┌─{BLUE}conversation summary{RESET}──────────────────────────", output)
 
+    def test_detects_summary_prompt(self):
+        """Test that summary prompts are detected and displayed with special header."""
+
+        # Create a request with a summary prompt in a user message
+        request_data = {
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text":
+                                "Your task is to create a detailed summary of the conversation so far, "
+                                "paying close attention to the user's explicit requests and your previous actions."
+                                "\n\nMore instructions here..."
+                        }
+                    ]
+                }
+            ]
+        }
+
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.url = "http://localhost:3000"
+        flow.request.text = json.dumps(request_data)
+        flow.response = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("summary prompt", output)
+
     def _create_mock_flow(self, request_file, response_data=None):
         """Helper to create a mock mitmproxy HTTPFlow."""
         fixture_path = Path(__file__).parent / request_file
