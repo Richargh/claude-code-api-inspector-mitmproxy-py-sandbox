@@ -1,10 +1,8 @@
 from datetime import datetime
 from pathlib import Path
-from textwrap import shorten
 
 from mitmproxy import http
 
-from internal.colors import RED, RESET
 from internal.flow_config import FlowConfig
 from internal.flows import RequestFlow, ResponseFlow, parse_flow
 from internal.print_request import print_request
@@ -20,13 +18,8 @@ def response(raw_flow: http.HTTPFlow, config: FlowConfig = _DEFAULT_CONFIG) -> N
     if config.write_trace:
         raw_request_file, raw_response_file = _write_trace(raw_flow, req_flow, res_flow)
 
-    if req_flow.error:
-        request_text = raw_flow.request.text if raw_flow.request and raw_flow.request.text else ""
-        print(f"{RED}# Request Error:{RESET} {shorten(request_text, width=1000, placeholder='...')}")
-        return
-
     if raw_flow.request:
-        print_request(req_flow, config)
+        print_request(raw_flow, req_flow, config)
 
     if raw_flow.response:
         print_response(raw_flow, res_flow)

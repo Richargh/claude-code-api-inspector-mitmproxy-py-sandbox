@@ -1,7 +1,8 @@
+from mitmproxy import http
 from textwrap import shorten
 
 from internal.box import box_wrap
-from internal.colors import BLUE, GRAY, RESET
+from internal.colors import RED, BLUE, GRAY, RESET
 from internal.diff import diff_system_prompts
 from internal.flow_config import FlowConfig
 from internal.flows import (
@@ -30,9 +31,14 @@ summary_prompt_start, known_summary_prompt = load_known_summary_prompt()
 # Extract first sentence from summary_result_start for matching
 summary_result_first_sentence = summary_result_start.split('.')[0]
 
-def print_request(req_flow: RequestFlow, config: FlowConfig) -> None:
+def print_request(raw_flow: http.HTTPFlow, req_flow: RequestFlow, config: FlowConfig) -> None:
     print(f"\n{BLUE}# Request:{RESET}")
     print(f"model:: {req_flow.model}")
+
+    if req_flow.error:
+        request_text = raw_flow.request.text if raw_flow.request and raw_flow.request.text else ""
+        print(f"{RED}# Request Error:{RESET} {shorten(request_text, width=1000, placeholder='...')}")
+        return
 
     if req_flow.system_prompts:
         print("## System")
