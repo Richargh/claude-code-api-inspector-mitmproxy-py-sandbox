@@ -1,4 +1,4 @@
-= Claude Inspector with Mitmproxy
+= Claude Code Api Inspector
 
 This project inspects precisely what Claude Code requests and receives in response from the LLM Web Api.
 Useful if you want to know what the agent is doing and what the context is that leads to its decisions.
