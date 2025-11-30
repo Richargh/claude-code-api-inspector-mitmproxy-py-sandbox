@@ -3,6 +3,45 @@
 This project inspects precisely what Claude Code requests and receives in response from the LLM Web Api.
 Useful if you want to know what the agent is doing and what the context is that leads to its decisions.
 
+== Example
+
+Say you want to know how Claude Code does its work.
+Well you can inspect what it sends to the LLM API to understand how it works.
+
+Say you have the following prompt:
+
+----
+What is this code base about?
+----
+
+What does Claude Code do with that prompt?
+
+It sends the prompt to the Api and it gets back the response to use the "Task" tool with the subagent "explore".
+
+image::flow-1.png[]
+
+Ok so what does this subagent do?
+
+A lot actually, here is just one of the agents in action.
+Note that the tool results are not sent to Opus, but to Haiku.
+Note also that Haiku returns further steps.
+
+image::flow-2.png[]
+
+In the end this leads to some 15 messages being sent to Haiku which will return a summary (_"Perfect! Now I have a comprehensive understanding..."_).
+This summary is then sent to Opus which will summarize it again and display the result to the user.
+
+image::flow-3.png[]
+
+So a lot happens in the background before something is displayed to you.
+The Api Inspector makes this transparent in your CLI.
+
+=== Trace
+
+The Api Inspector *logs everything to the link:trace/[] folder*.
+Just in case you want to understand more of what happened.
+Or in case a subagent explore floods your Cli and you cannot scroll up far enough.
+
 == Prerequisites
 
 === Python
