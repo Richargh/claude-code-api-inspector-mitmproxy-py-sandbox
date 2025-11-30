@@ -63,6 +63,13 @@ Auto-fix lint errors:
 pytest
 ----
 
+== Run tests, see missing coverage
+
+[source, shell]
+----
+pytest --cov=src --cov-report=term-missing
+----
+
 == Usage
 
 First start the proxy and pass the flow-printer-script:
