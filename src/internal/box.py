@@ -4,13 +4,14 @@ from internal.colors import RESET
 
 ANSI_ESCAPE = re.compile(r'\x1b\[[0-9;]*m')
 
+
 def box_wrap(
-    text: str,
-    width: int = 100,
-    header: str | None = None,
-    footer: str | None = None,
-    top: bool = True,
-    bottom: bool = True
+        text: str,
+        width: int = 100,
+        header: str | None = None,
+        footer: str | None = None,
+        top: bool = True,
+        bottom: bool = True
 ) -> str:
     """Return text inside an ASCII box.
 
@@ -41,7 +42,7 @@ def box_wrap(
             cut = 0
             visible = 0
             while visible < inner and cut < len(line):
-                if line[cut:cut+2] == '\x1b[':
+                if line[cut:cut + 2] == '\x1b[':
                     end = line.find('m', cut)
                     cut = end + 1 if end != -1 else cut + 1
                 else:
@@ -64,6 +65,7 @@ def box_wrap(
             lines.append("└" + "─" * (width - 2) + "┘")
 
     return "\n".join(lines)
+
 
 def _visible_len(s: str) -> int:
     """Return the visible length of a string, ignoring ANSI escape codes."""

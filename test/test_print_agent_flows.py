@@ -4,7 +4,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from internal.colors import GRAY, BLUE, RESET
+from internal.colors import BLUE, GRAY, RESET
 from internal.flow_config import FlowConfig
 from print_agent_flows import response
 
@@ -188,7 +188,7 @@ class TableFlowsTest(unittest.TestCase):
         request_data = {"model": "claude-3", "messages": [{"role": "user", "content": "Hi"}]}
         sse_response = """
 event: message_start
-data: {"type":"message_start","message":{"id":"msg_1","model":"claude-3","role":"assistant","usage":{"input_tokens":10}}}
+data: {"type":"message_start","message":{"id":"m_1","model":"claude-3","role":"assistant","usage":{"input_tokens":10}}}
 
 event: content_block_start
 data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
@@ -301,7 +301,8 @@ data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{}}
                     {"type": "server_tool_use", "id": "st_1", "name": "web_search", "input": {"query": "test"}}
                 ]},
                 {"role": "user", "content": [
-                    {"type": "server_tool_result", "tool_use_id": "st_1", "content": [{"type": "text", "text": "results"}]}
+                    {"type": "server_tool_result", "tool_use_id": "st_1",
+                     "content": [{"type": "text", "text": "results"}]}
                 ]}
             ]
         }
@@ -329,7 +330,7 @@ data: {"type":"content_block_start","index":0,"content_block":{"type":"web_searc
 
 event: message_delta
 data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{}}
-"""
+""" # noqa: E501
         flow = MagicMock()
         flow.request = MagicMock()
         flow.request.text = json.dumps(request_data)

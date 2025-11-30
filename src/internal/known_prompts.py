@@ -25,6 +25,7 @@ all_known_tools = {
 summary_result_start = ("This session is being continued from a previous conversation that ran out of context."
                         " The conversation is summarized below:")
 
+
 def load_known_system_prompts() -> dict[str, str]:
     internal_dir = Path(__file__).parent
     identity_prompt_path = internal_dir / 'system-prompt-identity.md'

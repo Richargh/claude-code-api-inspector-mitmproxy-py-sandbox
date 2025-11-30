@@ -18,17 +18,18 @@ class RequestFlow:
     tool_descriptions: dict[str, str] = field(default_factory=dict)
     error: str | None = None
 
+
 @dataclass
 class RequestMessage:
     role: str
     content: list[
         TextBlock | ToolUseBlock | ToolResultBlock | ServerToolUseBlock | ServerToolResultBlock
-    ] = field(default_factory=list)
+        ] = field(default_factory=list)
+
 
 @dataclass
 class SystemPrompt:
     text: str
-
 
 
 @dataclass
@@ -36,6 +37,7 @@ class ResponseFlow:
     pretty: str | None = None
     error: str | None = None
     message: ResponseMessage | None = None
+
 
 @dataclass
 class ResponseMessage:
@@ -45,16 +47,18 @@ class ResponseMessage:
     model: str | None = None
     content: list[
         TextBlock | ToolUseBlock | ServerToolUseBlock | ServerToolResultBlock
-    ] = field(default_factory=list)
+        ] = field(default_factory=list)
     stop_reason: str | None = None
     stop_sequence: str | None = None
     usage: Usage | None = None
     context_management: dict | None = None
 
+
 @dataclass
 class TextBlock:
     type: str = 'text'
     text: str = ''
+
 
 @dataclass
 class ToolUseBlock:
@@ -63,6 +67,7 @@ class ToolUseBlock:
     tool_name: str | None = None
     input: dict | None = None
 
+
 @dataclass
 class ServerToolUseBlock:
     type: str = 'server_tool_use'
@@ -70,17 +75,20 @@ class ServerToolUseBlock:
     tool_name: str | None = None
     input: dict | None = None
 
+
 @dataclass
 class ServerToolResultBlock:
     type: str = 'server_tool_result'
     tool_use_id: str | None = None
     content: list | None = None
 
+
 @dataclass
 class ToolResultBlock:
     type: str = 'tool_result'
     tool_use_id: str | None = None
     content: str | None = None
+
 
 @dataclass
 class Usage:
@@ -154,7 +162,7 @@ def _parse_content_list(content_list: str | list) -> list:
 
 
 def _parse_content_block(
-    item: dict,
+        item: dict,
 ) -> TextBlock | ToolUseBlock | ToolResultBlock | ServerToolUseBlock | ServerToolResultBlock:
     """Create a content block from a dict."""
     block_type = item.get('type', '')

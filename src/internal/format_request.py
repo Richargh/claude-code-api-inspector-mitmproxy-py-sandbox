@@ -1,10 +1,18 @@
-from mitmproxy import http
 from textwrap import shorten
 
+from mitmproxy import http
+
 from internal.box import box_wrap
-from internal.colors import RED, BLUE, GRAY, RESET
+from internal.colors import BLUE, GRAY, RED, RESET
 from internal.diff import diff_system_prompts
 from internal.flow_config import FlowConfig
+from internal.known_prompts import (
+    all_known_tools,
+    load_known_summary_prompt,
+    load_known_system_prompts,
+    load_known_tool_descriptions,
+    summary_result_start,
+)
 from internal.parse_flows import (
     RequestFlow,
     RequestMessage,
@@ -14,13 +22,6 @@ from internal.parse_flows import (
     TextBlock,
     ToolResultBlock,
     ToolUseBlock,
-)
-from internal.known_prompts import (
-    all_known_tools,
-    load_known_summary_prompt,
-    load_known_system_prompts,
-    load_known_tool_descriptions,
-    summary_result_start,
 )
 from internal.shorten_dict import shorten_dict
 
@@ -102,11 +103,14 @@ def _format_message(message: RequestMessage, actual_index: int, should_highlight
         else:
             # Fallback for any other content type
             text_preview = shorten(getattr(content, 'text', '') or '', width=200, placeholder='...')
-            lines.append(f"{color_start}{box_wrap(text_preview, header=getattr(content, 'type', 'unknown'))}{color_end}")
+            boxed_preview = box_wrap(text_preview, header=getattr(content, 'type', 'unknown'))
+            lines.append(f"{color_start}{boxed_preview}{color_end}")
     return '\n'.join(lines)
 
 
-def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[list[RequestMessage], int | None, str | None]:
+def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[
+    list[RequestMessage], int | None, str | None
+]:
     most_recent_user_prompt_index = None
     warning: str | None = None
     for index, message in enumerate(all_messages):
