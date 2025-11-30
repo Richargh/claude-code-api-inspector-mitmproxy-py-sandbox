@@ -5,7 +5,7 @@ from internal.box import box_wrap
 from internal.colors import RED, BLUE, GRAY, RESET
 from internal.diff import diff_system_prompts
 from internal.flow_config import FlowConfig
-from internal.flows import (
+from internal.parse_flows import (
     RequestFlow,
     RequestMessage,
     ServerToolResultBlock,

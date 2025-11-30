@@ -4,7 +4,7 @@ from mitmproxy import http
 
 from internal.box import box_wrap
 from internal.colors import GREEN, RED, RESET
-from internal.flows import ResponseFlow, ServerToolResultBlock, ServerToolUseBlock, TextBlock, ToolUseBlock
+from internal.parse_flows import ResponseFlow, ServerToolResultBlock, ServerToolUseBlock, TextBlock, ToolUseBlock
 from internal.shorten_dict import shorten_dict
 
 

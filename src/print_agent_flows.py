@@ -4,7 +4,7 @@ from pathlib import Path
 from mitmproxy import http
 
 from internal.flow_config import FlowConfig
-from internal.flows import RequestFlow, ResponseFlow, parse_flow
+from internal.parse_flows import RequestFlow, ResponseFlow, parse_flow
 from internal.format_request import format_request
 from internal.format_response import format_response
 
