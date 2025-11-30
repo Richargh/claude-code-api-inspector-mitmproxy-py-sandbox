@@ -55,7 +55,9 @@ def format_request(raw_flow: http.HTTPFlow, req_flow: RequestFlow, config: FlowC
 
         # Show diffs for changed tool descriptions
         for tool_name in req_flow.tools:
-            lines.append(_format_tool_description_diff(tool_name, req_flow.tool_descriptions.get(tool_name), config))
+            diff = _format_tool_description_diff(tool_name, req_flow.tool_descriptions.get(tool_name), config)
+            if diff:
+                lines.append(diff)
 
     if req_flow.messages:
         lines.append("## Messages")
@@ -129,14 +131,14 @@ def _filter_relevant_messages(all_messages: list[RequestMessage]) -> tuple[
     return messages_to_show, most_recent_user_prompt_index, warning
 
 
-def _format_tool_description_diff(tool_name: str, tool_description: str | None, config: FlowConfig) -> str:
+def _format_tool_description_diff(tool_name: str, tool_description: str | None, config: FlowConfig) -> str | None:
     if tool_name in known_tool_descriptions and tool_description is not None:
         known_desc = known_tool_descriptions[tool_name]
         if known_desc != tool_description:
             diff = diff_system_prompts(known_desc, tool_description, config)
             if diff:
                 return box_wrap(diff, header=f"Changed Tool Description: {tool_name}")
-    return ""
+    return None
 
 
 def _format_system_prompt(config: FlowConfig, sys_prompt: SystemPrompt) -> str:
