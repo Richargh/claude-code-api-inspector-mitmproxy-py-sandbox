@@ -3,7 +3,7 @@
 import json
 
 
-def shorten_dict(input_dict: dict | None, max_line_length: int = 50) -> str:
+def shorten_dict(input_dict: dict | None, max_line_length: int = 80) -> str:
     """Format tool input dict with each key on a new line, values shortened in middle.
 
     Args:
