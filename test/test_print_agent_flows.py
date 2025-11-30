@@ -183,6 +183,185 @@ class TableFlowsTest(unittest.TestCase):
 
         self.assertIn("summary prompt", output)
 
+    def test_response_with_sse_streaming(self):
+        """Test parsing and displaying SSE streaming response."""
+        request_data = {"model": "claude-3", "messages": [{"role": "user", "content": "Hi"}]}
+        sse_response = """
+event: message_start
+data: {"type":"message_start","message":{"id":"msg_1","model":"claude-3","role":"assistant","usage":{"input_tokens":10}}}
+
+event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hello!"}}
+
+event: message_delta
+data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{"output_tokens":5}}
+"""
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps(request_data)
+        flow.response = MagicMock()
+        flow.response.text = sse_response
+        flow.response.headers = {'content-type': 'text/event-stream'}
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("# Response", output)
+        self.assertIn("Hello!", output)
+
+    def test_response_with_tool_use_sse(self):
+        """Test SSE response with tool_use block and input_json_delta accumulation."""
+        request_data = {"model": "claude-3", "messages": [{"role": "user", "content": "Read file"}]}
+        sse_response = """
+event: message_start
+data: {"type":"message_start","message":{"id":"msg_1","model":"claude-3","role":"assistant","usage":{}}}
+
+event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"tool_use","id":"tool_1","name":"Read"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"{\\"file\\":"}}
+
+event: content_block_delta
+data: {"type":"content_block_delta","index":0,"delta":{"type":"input_json_delta","partial_json":"\\"test.py\\"}"}}
+
+event: message_delta
+data: {"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{}}
+"""
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps(request_data)
+        flow.response = MagicMock()
+        flow.response.text = sse_response
+        flow.response.headers = {'content-type': 'text/event-stream'}
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("tool_use Read", output)
+
+    def test_response_with_error(self):
+        """Test that error responses are displayed."""
+        request_data = {"model": "claude-3", "messages": []}
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps(request_data)
+        flow.response = MagicMock()
+        flow.response.text = "invalid json response"
+        flow.response.headers = {'content-type': 'application/json'}
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("Response Error", output)
+
+    def test_response_with_request_error(self):
+        """Test that request parse errors are displayed."""
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = "not valid json at all"
+        flow.response = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("Request Error", output)
+
+    def test_message_content_as_string(self):
+        """Test parsing message with content as plain string instead of list."""
+        request_data = {
+            "model": "claude-3",
+            "messages": [{"role": "user", "content": "Plain string content"}]
+        }
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps(request_data)
+        flow.response = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("Plain string content", output)
+
+    def test_server_tool_blocks(self):
+        """Test parsing server_tool_use and server_tool_result blocks."""
+        request_data = {
+            "model": "claude-3",
+            "messages": [
+                {"role": "user", "content": [{"type": "text", "text": "Search"}]},
+                {"role": "assistant", "content": [
+                    {"type": "server_tool_use", "id": "st_1", "name": "web_search", "input": {"query": "test"}}
+                ]},
+                {"role": "user", "content": [
+                    {"type": "server_tool_result", "tool_use_id": "st_1", "content": [{"type": "text", "text": "results"}]}
+                ]}
+            ]
+        }
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps(request_data)
+        flow.response = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("server_tool_use", output)
+        self.assertIn("server_tool_result", output)
+
+    def test_web_search_tool_result_sse(self):
+        """Test SSE response with web_search_tool_result block."""
+        request_data = {"model": "claude-3", "messages": [{"role": "user", "content": "Search"}]}
+        sse_response = """
+event: message_start
+data: {"type":"message_start","message":{"id":"msg_1","model":"claude-3","role":"assistant","usage":{}}}
+
+event: content_block_start
+data: {"type":"content_block_start","index":0,"content_block":{"type":"web_search_tool_result","tool_use_id":"ws_1","content":[{"type":"text","text":"Search results"}]}}
+
+event: message_delta
+data: {"type":"message_delta","delta":{"stop_reason":"end_turn"},"usage":{}}
+"""
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps(request_data)
+        flow.response = MagicMock()
+        flow.response.text = sse_response
+        flow.response.headers = {'content-type': 'text/event-stream'}
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("# Response", output)
+
+    def test_unknown_system_prompt(self):
+        """Test that unknown system prompts show full text."""
+        request_data = {
+            "model": "claude-3",
+            "system": [{"type": "text", "text": "You are a custom assistant with special rules."}],
+            "messages": [{"role": "user", "content": "Hi"}]
+        }
+        flow = MagicMock()
+        flow.request = MagicMock()
+        flow.request.text = json.dumps(request_data)
+        flow.response = None
+
+        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
+            response(flow, FlowConfig(write_trace=False))
+            output = mock_stdout.getvalue()
+
+        self.assertIn("Unknown System Prompt", output)
+        self.assertIn("custom assistant", output)
+
     def _create_mock_flow(self, request_file, response_data=None):
         """Helper to create a mock mitmproxy HTTPFlow."""
         fixture_path = Path(__file__).parent / request_file
